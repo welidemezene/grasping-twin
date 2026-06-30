@@ -1,0 +1,44 @@
+# Grasping Twin · Day 1 · PPO on Reacher-v5
+
+import gymnasium as gym
+from stable_baselines3 import PPO
+from stable_baselines3.common.monitor import Monitor
+from stable_baselines3.common.vec_env import DummyVecEnv
+import os
+
+os.makedirs("logs", exist_ok=True)
+os.makedirs("models", exist_ok=True)
+
+def make_env():
+    env = gym.make("Reacher-v5")
+    env = Monitor(env, "logs/monitor")
+    return env
+
+env = DummyVecEnv([make_env])
+
+model = PPO(
+    "MlpPolicy",
+    env,
+    learning_rate=3e-4,
+    n_steps=2048,
+    batch_size=64,
+    n_epochs=10,
+    gamma=0.99,
+    clip_range=0.2,
+    verbose=1,
+    tensorboard_log="logs/"
+)
+
+print("Training started")
+print("Watch ep_rew_mean rise and entropy fall")
+print("-" * 50)
+
+model.learn(
+    total_timesteps=300_000,
+    tb_log_name="ppo_reacher_day1"
+)
+
+model.save("models/reacher_ppo_day1")
+print("Done. Model saved.")
+env.close()
+
