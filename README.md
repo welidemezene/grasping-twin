@@ -1,0 +1,1 @@
+Week 2 in progress: Isaac Lab installed, GPU verified (RTX 5070 Ti, torch 2.11+cu128), Docker + NVIDIA Container Toolkit set up to run Isaac Sim in a pinned container image (working around Ubuntu 26.04 glibc mismatch). Franka Lift GPU training run next.
