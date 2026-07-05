@@ -2,7 +2,7 @@
 
 from isaaclab.app import AppLauncher
 
-app_launcher = AppLauncher(headless=True)
+app_launcher = AppLauncher(headless=True, enable_cameras=False)
 simulation_app = app_launcher.app
 
 import gymnasium as gym
@@ -11,7 +11,7 @@ import isaaclab_tasks  # noqa: F401  registers Isaac Lab gym environments
 from isaaclab_tasks.utils import parse_env_cfg
 
 task_name = "Isaac-Lift-Cube-Franka-v0"
-env_cfg = parse_env_cfg(task_name, num_envs=64)
+env_cfg = parse_env_cfg(task_name, num_envs=4)
 env = gym.make(task_name, cfg=env_cfg)
 
 print(f"Task: {task_name}")
