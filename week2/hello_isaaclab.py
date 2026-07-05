@@ -11,7 +11,7 @@ import isaaclab_tasks  # noqa: F401  registers Isaac Lab gym environments
 from isaaclab_tasks.utils import parse_env_cfg
 
 task_name = "Isaac-Lift-Cube-Franka-v0"
-env_cfg = parse_env_cfg(task_name, num_envs=4)
+env_cfg = parse_env_cfg(task_name, num_envs=32)
 env = gym.make(task_name, cfg=env_cfg)
 
 print(f"Task: {task_name}")
