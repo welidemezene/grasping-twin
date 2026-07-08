@@ -5,4 +5,5 @@ RUN /isaac-sim/python.sh -m pip install setuptools --quiet
 RUN /isaac-sim/python.sh -m pip install --no-build-isolation isaaclab --quiet
 RUN /isaac-sim/python.sh -m pip install stable-baselines3 --quiet
 RUN /isaac-sim/python.sh -m pip install --upgrade torch torchvision --index-url https://download.pytorch.org/whl/cu128 --quiet
+RUN /isaac-sim/python.sh -m pip install jupyterlab --quiet
 ENTRYPOINT ["/isaac-sim/python.sh"]
