@@ -1,0 +1,5 @@
+checkpoint week3/checkpoints/stage10_2795520_steps
+frames 249
+cube z: start 0.0521 min 0.0209 max 0.0521 end 0.0216
+gripper-cube distance: start 0.3365 min 0.0027 (frame 40) end 0.0136
+no grasp: min finger sum 0.0750 at frame 28 (gap there 0.0138)
