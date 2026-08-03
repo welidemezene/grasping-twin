@@ -1,0 +1,12 @@
+checkpoint week3/checkpoints/stage7_4992000_steps
+action dims: 8   (last one is the gripper)
+log_std per dim: -0.57 -0.80 -1.06 -1.16 -0.53 -0.87 -0.43 -0.55
+std     per dim: 0.568 0.451 0.347 0.312 0.587 0.418 0.651 0.579
+
+gripper action, deterministic (what the replay uses):
+  min 1.032  max 2.147  mean 1.530   frames below 0 (= close command): 0 / 250
+gripper action, sampled (what training explores with):
+  min -0.645  max 3.459  mean 1.550   frames below 0: 3 / 250
+
+while INSIDE 3 cm (218 frames): deterministic gripper mean 1.520, min 1.032
+                                sampled       gripper min  -0.645, frames<0 3

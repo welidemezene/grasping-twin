@@ -1,0 +1,12 @@
+stepped 30 times with random actions — no crash
+
+mean episode reward so far, per term:
+  reaching_object                    +0.0178
+  lifting_object                     +0.0000
+  object_goal_tracking               +0.0000
+  object_goal_tracking_fine_grained  +0.0000
+  action_rate                        -0.0003
+  joint_vel                          -0.0013
+  grasping_object                    +0.2943
+
+lifting_object is ZERO — expected ~0 with random actions, since it now needs a real hold

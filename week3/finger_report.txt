@@ -1,0 +1,7 @@
+finger SUM while CLOSE is commanded every step (open = 0.080):
+  s0 0.0716  s1 0.0633  s2 0.0550  s3 0.0468  s4 0.0386  s5 0.0305  s6 0.0225  s7 0.0152  s8 0.0102  s9 0.0068  s10 0.0046  s11 0.0031  s12 0.0021  s13 0.0014
+  steps to cross the 0.06 threshold the reward tests: 2
+
+finger SUM for a SINGLE close command then open again:
+  0.0800  0.0716  0.0743  0.0762  0.0774  0.0783
+  lowest reached: 0.0716  (threshold is 0.060)

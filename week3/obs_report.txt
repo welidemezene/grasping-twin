@@ -1,0 +1,9 @@
+--- OBSERVATIONS ---
+group: policy
+   joint_pos                              joint_pos_rel
+   joint_vel                              joint_vel_rel
+   object_position                        object_position_in_robot_root_frame
+   target_object_position                 generated_commands
+   actions                                last_action
+--- CUBE SPAWN RANDOMISATION ---
+{'x': (0.0, 0.0), 'y': (0.0, 0.0), 'z': (0.0, 0.0)}

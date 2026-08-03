@@ -1,0 +1,12 @@
+reaching_object                    isaaclab_tasks.manager_based.manipulation.lift.mdp.rewards.object_ee_distance
+lifting_object                     grasp_reward.object_lifted_in_hand
+object_goal_tracking               grasp_reward.object_goal_distance_in_hand
+object_goal_tracking_fine_grained  grasp_reward.object_goal_distance_in_hand
+action_rate                        isaaclab.envs.mdp.rewards.action_rate_l2
+joint_vel                          isaaclab.envs.mdp.rewards.joint_vel_l2
+grasping_object                    grasp_reward.object_is_grasped
+IMPORT lift.mdp OK
+has object_is_lifted: True
+has object_goal_distance: True
+sig object_is_lifted: (env: 'ManagerBasedRLEnv', minimal_height: 'float', object_cfg: 'SceneEntityCfg' = SceneEntityCfg(name='object', joint_names=None, joint_ids=slice(None, None, None), fixed_tendon_names=None, fixed_tendon_ids=slice(None, None, None), body_names=None, body_ids=slice(None, None, None), object_collection_names=None, object_collection_ids=slice(None, None, None), preserve_order=False)) -> 'torch.Tensor'
+sig object_goal_distance: (env: 'ManagerBasedRLEnv', std: 'float', minimal_height: 'float', command_name: 'str', robot_cfg: 'SceneEntityCfg' = SceneEntityCfg(name='robot', joint_names=None, joint_ids=slice(None, None, None), fixed_tendon_names=None, fixed_tendon_ids=slice(None, None, None), body_names=None, body_ids=slice(None, None, None), object_collection_names=None, object_collection_ids=slice(None, None, None), preserve_order=False), object_cfg: 'SceneEntityCfg' = SceneEntityCfg(name='object', joint_names=None, joint_ids=slice(None, None, None), fixed_tendon_names=None, fixed_tendon_ids=slice(None, None, None), body_names=None, body_ids=slice(None, None, None), object_collection_names=None, object_collection_ids=slice(None, None, None), preserve_order=False)) -> 'torch.Tensor'
