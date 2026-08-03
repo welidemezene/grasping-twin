@@ -1,0 +1,4 @@
+gripper bias before 0.1090
+gripper bias after  0.0000
+gripper weight row max abs after 0.000000
+gripper log_std -0.547 -> half of samples should now command close
