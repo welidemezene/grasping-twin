@@ -33,6 +33,17 @@ class FrankaLiftStage1Cfg(FrankaCubeLiftEnvCfg):
     def __post_init__(self):
         super().__post_init__()
 
+        # KILL the stock curriculum. The base lift task silently multiplies the
+        # action_rate and joint_vel penalties by 1000x (-1e-4 -> -1e-1) after
+        # 10,000 per-env steps = ~5.1M total steps at 512 envs. Stage 10 and 11
+        # both collapsed from ep_rew ~19.6 to ~0.3 at exactly that step, and it
+        # is why every 10M final in this project froze far from the cube: the
+        # second half of every long run was trained under a movement tax that
+        # punished the micro-adjustments parking needs and the finger flips
+        # closing needs. Penalties stay at their gentle base weights instead.
+        self.curriculum.action_rate = None
+        self.curriculum.joint_vel = None
+
         # Cube spawns in the SAME spot every episode (randomization is a later
         # stage — first the grasp itself has to exist)
         self.events.reset_object_position.params["pose_range"] = {
