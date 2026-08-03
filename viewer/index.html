@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Grasping Twin · Motion Replay</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+  :root{
+    --graphite:#16181C;
+    --slate:#1E2127;
+    --rule:#2A2E36;
+    --porcelain:#E8E6E1;
+    --muted:#868C97;
+    --signal:#FFB627;
+    --lift:#5FD98B;
+    --rest:#E8654F;
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:var(--graphite);
+    color:var(--porcelain);
+    font-family:var(--sans);
+    overflow:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+  .label{
+    font-size:9px;
+    letter-spacing:.16em;
+    text-transform:uppercase;
+    color:var(--muted);
+    font-weight:600;
+  }
+  .num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+  /* ---------- shell ---------- */
+  #app{display:flex;flex-direction:column;height:100vh}
+
+  header{
+    display:flex;align-items:center;gap:16px;
+    padding:0 18px;height:52px;flex-shrink:0;
+    border-bottom:1px solid var(--rule);
+    background:var(--slate);
+  }
+  .mark{display:flex;align-items:baseline;gap:9px}
+  .mark b{font-size:13px;font-weight:650;letter-spacing:-.01em}
+  .mark span{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  .spacer{flex:1}
+  button{
+    font-family:var(--sans);font-size:11px;font-weight:600;
+    letter-spacing:.06em;text-transform:uppercase;
+    background:transparent;color:var(--porcelain);
+    border:1px solid var(--rule);border-radius:3px;
+    padding:7px 13px;cursor:pointer;transition:border-color .15s,color .15s;
+  }
+  button:hover{border-color:var(--signal);color:var(--signal)}
+  button:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
+  button.ghost{border-color:transparent;color:var(--muted)}
+  button.ghost:hover{color:var(--signal)}
+
+  /* ---------- body ---------- */
+  main{flex:1;display:flex;min-height:0}
+  #stage{flex:1;position:relative;min-width:0}
+  #stage canvas{display:block}
+
+  #drop{
+    position:absolute;inset:0;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:14px;
+    background:rgba(22,24,28,.92);z-index:5;text-align:center;padding:24px;
+  }
+  #drop.hidden{display:none}
+  #drop h2{font-size:15px;font-weight:600;letter-spacing:-.01em}
+  #drop p{font-size:12px;color:var(--muted);line-height:1.7;max-width:340px}
+  #drop .row{display:flex;gap:10px;margin-top:4px}
+  .dashed{
+    border:1px dashed var(--rule);border-radius:5px;
+    padding:30px 40px;transition:border-color .15s;
+  }
+  #drop.over .dashed{border-color:var(--signal)}
+
+  .hint{
+    position:absolute;left:16px;bottom:14px;z-index:2;
+    font-size:10px;color:var(--muted);letter-spacing:.04em;
+  }
+
+  /* ---------- readout ---------- */
+  aside{
+    width:296px;flex-shrink:0;background:var(--slate);
+    border-left:1px solid var(--rule);
+    overflow-y:auto;
+  }
+  .block{padding:16px 18px;border-bottom:1px solid var(--rule)}
+  .block .label{margin-bottom:9px}
+
+  .verdict{
+    display:flex;align-items:center;gap:10px;
+    font-family:var(--mono);font-size:15px;font-weight:600;letter-spacing:.02em;
+  }
+  .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+  .v-rest .dot{background:var(--rest);box-shadow:0 0 10px rgba(232,101,79,.5)}
+  .v-rest{color:var(--rest)}
+  .v-lift .dot{background:var(--lift);box-shadow:0 0 10px rgba(95,217,139,.5)}
+  .v-lift{color:var(--lift)}
+  .v-none .dot{background:var(--rule)}
+  .v-none{color:var(--muted)}
+  .verdict-sub{font-size:11px;color:var(--muted);margin-top:7px;line-height:1.6}
+
+  .big{font-family:var(--mono);font-size:29px;font-weight:500;letter-spacing:-.02em;line-height:1}
+  .big small{font-size:13px;color:var(--muted);margin-left:4px;font-weight:400}
+  .pair{display:flex;gap:22px;margin-top:11px}
+  .pair div{flex:1}
+  .pair .k{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  .pair .v{font-family:var(--mono);font-size:13px;margin-top:3px}
+
+  #trace{width:100%;height:112px;display:block;border-radius:3px;background:#111317}
+
+  .legend{display:flex;gap:14px;margin-top:8px;font-size:9.5px;color:var(--muted);flex-wrap:wrap}
+  .legend i{display:inline-block;width:14px;height:0;border-top:1px solid;margin-right:5px;vertical-align:middle}
+
+  table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:11.5px}
+  td{padding:3.5px 0}
+  td:first-child{color:var(--muted);width:46px;letter-spacing:.06em}
+  td:last-child{text-align:right}
+  .bar{height:2px;background:var(--rule);margin-top:2px;position:relative;border-radius:1px}
+  .bar i{position:absolute;top:0;bottom:0;background:var(--signal);border-radius:1px}
+
+  /* ---------- transport ---------- */
+  footer{
+    height:54px;flex-shrink:0;display:flex;align-items:center;gap:14px;
+    padding:0 18px;border-top:1px solid var(--rule);background:var(--slate);
+  }
+  .play{
+    width:32px;height:32px;border-radius:3px;display:flex;align-items:center;
+    justify-content:center;padding:0;flex-shrink:0;
+  }
+  .play svg{width:11px;height:11px;fill:currentColor}
+  input[type=range]{
+    flex:1;-webkit-appearance:none;appearance:none;height:2px;
+    background:var(--rule);border-radius:1px;outline:none;cursor:pointer;min-width:60px;
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;width:11px;height:11px;border-radius:50%;
+    background:var(--signal);cursor:pointer;
+  }
+  input[type=range]::-moz-range-thumb{
+    width:11px;height:11px;border:0;border-radius:50%;background:var(--signal);cursor:pointer;
+  }
+  input[type=range]:focus-visible{outline:2px solid var(--signal);outline-offset:4px}
+  .frame{font-family:var(--mono);font-size:11.5px;color:var(--muted);white-space:nowrap;flex-shrink:0}
+  .frame b{color:var(--porcelain);font-weight:500}
+  .speeds{display:flex;gap:3px;flex-shrink:0}
+  .speeds button{padding:5px 8px;font-size:10px;letter-spacing:.04em}
+  .speeds button.on{border-color:var(--signal);color:var(--signal)}
+
+  @media (max-width: 860px){
+    main{flex-direction:column}
+    aside{width:100%;border-left:0;border-top:1px solid var(--rule);max-height:46vh}
+    #stage{min-height:280px}
+    footer{gap:9px;padding:0 12px}
+    .frame{font-size:10px}
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{transition:none !important}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <header>
+    <div class="mark"><b>Grasping Twin</b><span>Motion replay</span></div>
+    <div class="spacer"></div>
+    <button id="btnLive">Go live</button>
+    <button id="btnLoad">Load motion.json</button>
+    <input type="file" id="file" accept=".json" hidden>
+  </header>
+
+  <main>
+    <div id="stage">
+      <div id="drop">
+        <div class="dashed">
+          <h2>No motion loaded</h2>
+          <p>Drop a recording here — the <span class="num">motion.json</span> written by
+             <span class="num">record_motion.py</span> from one of your checkpoints.
+             Nothing is uploaded; it is read in your browser.</p>
+          <div class="row">
+            <button id="btnLoad2">Choose file</button>
+          </div>
+        </div>
+      </div>
+      <div class="hint">Drag to orbit · scroll to zoom · right-drag to pan</div>
+    </div>
+
+    <aside>
+      <div class="block">
+        <div class="label">Verdict</div>
+        <div class="verdict v-none" id="verdict"><span class="dot"></span><span id="verdictText">Awaiting data</span></div>
+        <div class="verdict-sub" id="verdictSub">Lift is confirmed when cube height clears the threshold.</div>
+      </div>
+
+      <div class="block">
+        <div class="label">Cube height</div>
+        <div class="big"><span class="num" id="hNow">—</span><small>m</small></div>
+        <div class="pair">
+          <div><div class="k">Peak</div><div class="v" id="hMax">—</div></div>
+          <div><div class="k">At rest</div><div class="v" id="hRest">—</div></div>
+        </div>
+      </div>
+
+      <div class="block">
+        <div class="label">Height trace</div>
+        <canvas id="trace"></canvas>
+        <div class="legend">
+          <span><i style="border-color:var(--signal)"></i>height</span>
+          <span><i style="border-color:var(--lift);border-top-style:dashed"></i>lift threshold</span>
+          <span><i style="border-color:var(--rest);border-top-style:dotted"></i>resting</span>
+        </div>
+      </div>
+
+      <div class="block">
+        <div class="label">Joints · radians</div>
+        <table id="joints"></table>
+      </div>
+
+      <div class="block">
+        <div class="label">Gripper → cube</div>
+        <div class="big"><span class="num" id="gapNow">—</span><small>m</small></div>
+        <div class="pair">
+          <div><div class="k">Closest</div><div class="v" id="gapMin">—</div></div>
+          <div><div class="k">Grasp needs</div><div class="v">0.030</div></div>
+        </div>
+      </div>
+
+      <div class="block">
+        <div class="label">Gripper</div>
+        <table id="grip"></table>
+      </div>
+    </aside>
+  </main>
+
+  <footer>
+    <button class="play" id="btnPlay" aria-label="Play"><svg viewBox="0 0 10 12"><polygon points="0,0 10,6 0,12"/></svg></button>
+    <input type="range" id="scrub" min="0" max="0" value="0" step="1" aria-label="Frame">
+    <div class="frame"><b id="fNow">0</b> / <span id="fAll">0</span></div>
+    <div class="speeds">
+      <button data-s="0.5">0.5×</button>
+      <button data-s="1" class="on">1×</button>
+      <button data-s="2">2×</button>
+      <button data-s="4">4×</button>
+    </div>
+  </footer>
+
+</div>
+
+<script>
+/* ============================================================
+   Franka Emika Panda — modified (Craig) DH parameters
+   a and alpha belong to link i-1, d and theta to joint i.
+   Source: Franka's published robot description.
+   ============================================================ */
+const DH = [
+  {a: 0,       d: 0.333, alpha: 0},
+  {a: 0,       d: 0,     alpha: -Math.PI/2},
+  {a: 0,       d: 0.316, alpha:  Math.PI/2},
+  {a: 0.0825,  d: 0,     alpha:  Math.PI/2},
+  {a: -0.0825, d: 0.384, alpha: -Math.PI/2},
+  {a: 0,       d: 0,     alpha:  Math.PI/2},
+  {a: 0.088,   d: 0,     alpha:  Math.PI/2}
+];
+const FLANGE = {a: 0, d: 0.107, alpha: 0};
+
+const REST_H  = 0.0210;   // cube centre height sitting on the table
+const LIFT_H  = 0.0350;   // gate used in the reward function
+const TABLE_X = 0.50;     // table sits 0.5 m in front of the base
+
+/* ---------- scene ---------- */
+const stage = document.getElementById('stage');
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+stage.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x16181C);
+scene.fog = new THREE.Fog(0x16181C, 2.2, 5.2);
+
+const camera = new THREE.PerspectiveCamera(42, 1, 0.05, 60);
+
+// robot works in Z-up; tilt the whole world so Z reads as up on screen
+const world = new THREE.Group();
+world.rotation.x = -Math.PI/2;
+scene.add(world);
+
+scene.add(new THREE.HemisphereLight(0x9fb0c8, 0x0a0b0d, 0.5));
+const key = new THREE.DirectionalLight(0xfff2e0, 1.15);
+key.position.set(2.2, 3.4, 2.0);
+key.castShadow = true;
+key.shadow.mapSize.set(2048,2048);
+key.shadow.camera.left=-1.6; key.shadow.camera.right=1.6;
+key.shadow.camera.top=1.6;  key.shadow.camera.bottom=-1.6;
+key.shadow.bias = -0.0008;
+scene.add(key);
+const rim = new THREE.DirectionalLight(0xFFB627, 0.28);
+rim.position.set(-2.4, 1.2, -1.8);
+scene.add(rim);
+
+/* floor + grid, in world (Z-up) space */
+const floor = new THREE.Mesh(
+  new THREE.PlaneGeometry(8,8),
+  new THREE.MeshStandardMaterial({color:0x1b1e24, roughness:.95, metalness:0})
+);
+floor.position.z = -0.0005;
+floor.receiveShadow = true;
+world.add(floor);
+
+const grid = new THREE.GridHelper(6, 24, 0x2A2E36, 0x212429);
+grid.rotation.x = Math.PI/2;
+world.add(grid);
+
+/* table slab under the cube */
+const table = new THREE.Mesh(
+  new THREE.BoxGeometry(0.62, 0.9, 0.012),
+  new THREE.MeshStandardMaterial({color:0x24272e, roughness:.85, metalness:.05})
+);
+table.position.set(TABLE_X, 0, -0.006);
+table.receiveShadow = true;
+world.add(table);
+
+/* ---------- robot ---------- */
+const matLink = new THREE.MeshStandardMaterial({color:0xdedbd4, roughness:.42, metalness:.14});
+const matJoint= new THREE.MeshStandardMaterial({color:0x33373f, roughness:.55, metalness:.35});
+const matGrip = new THREE.MeshStandardMaterial({color:0x3a3f48, roughness:.5,  metalness:.4});
+
+const robot = new THREE.Group();
+world.add(robot);
+
+const base = new THREE.Mesh(new THREE.CylinderGeometry(0.075,0.088,0.05,32), matJoint);
+base.rotation.x = Math.PI/2; base.position.z = 0.025; base.castShadow = true;
+robot.add(base);
+
+const RADII = [0.045,0.043,0.041,0.039,0.036,0.033,0.030,0.028];
+const segs = [], knuckles = [];
+for(let i=0;i<8;i++){
+  const c = new THREE.Mesh(new THREE.CylinderGeometry(1,1,1,20), matLink);
+  c.castShadow = true; robot.add(c); segs.push(c);
+  const k = new THREE.Mesh(new THREE.SphereGeometry(1,18,14), matJoint);
+  k.castShadow = true; robot.add(k); knuckles.push(k);
+}
+const fingerL = new THREE.Mesh(new THREE.BoxGeometry(0.016,0.014,0.055), matGrip);
+const fingerR = fingerL.clone();
+fingerL.castShadow = fingerR.castShadow = true;
+robot.add(fingerL, fingerR);
+
+const cube = new THREE.Mesh(
+  new THREE.BoxGeometry(0.042,0.042,0.042),
+  new THREE.MeshStandardMaterial({color:0xFFB627, roughness:.35, metalness:.1,
+                                  emissive:0x5a3a00, emissiveIntensity:.35})
+);
+cube.castShadow = true;
+world.add(cube);
+
+/* The measured end-effector, straight from the recording's ee field — not from
+   the drawn arm. The line to the cube is the distance the grasp reward cares
+   about, so it can be seen instead of inferred from the pose. */
+const eeDot = new THREE.Mesh(
+  new THREE.SphereGeometry(0.013, 14, 12),
+  new THREE.MeshBasicMaterial({color:0x5FD98B})
+);
+eeDot.visible = false;
+world.add(eeDot);
+
+const gapLine = new THREE.Line(
+  new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]),
+  new THREE.LineBasicMaterial({color:0xE8654F})
+);
+gapLine.visible = false;
+world.add(gapLine);
+
+/* dashed threshold plane the cube must clear */
+const gate = new THREE.Mesh(
+  new THREE.PlaneGeometry(0.30,0.30),
+  new THREE.MeshBasicMaterial({color:0x5FD98B, transparent:true, opacity:.09, side:THREE.DoubleSide})
+);
+gate.position.set(TABLE_X, 0, LIFT_H);
+world.add(gate);
+
+/* ---------- forward kinematics ---------- */
+const _m = new THREE.Matrix4(), _t = new THREE.Matrix4();
+function dhStep(a, d, alpha, theta){
+  return new THREE.Matrix4().makeRotationX(alpha)
+    .multiply(_m.makeTranslation(a,0,0))
+    .multiply(_t.makeRotationZ(theta))
+    .multiply(new THREE.Matrix4().makeTranslation(0,0,d));
+}
+function solve(theta){
+  let T = new THREE.Matrix4();
+  const pts = [new THREE.Vector3(0,0,0)];
+  for(let i=0;i<7;i++){
+    T = T.clone().multiply(dhStep(DH[i].a, DH[i].d, DH[i].alpha, theta[i]||0));
+    pts.push(new THREE.Vector3().setFromMatrixPosition(T));
+  }
+  T = T.clone().multiply(dhStep(FLANGE.a, FLANGE.d, FLANGE.alpha, 0));
+  pts.push(new THREE.Vector3().setFromMatrixPosition(T));
+  return {pts, flange:T};
+}
+const UP = new THREE.Vector3(0,1,0), _d = new THREE.Vector3();
+function lay(mesh, p0, p1, r){
+  _d.subVectors(p1,p0);
+  const L = _d.length();
+  if(L < 1e-5){ mesh.visible = false; return; }
+  mesh.visible = true;
+  mesh.position.copy(p0).add(p1).multiplyScalar(0.5);
+  mesh.quaternion.setFromUnitVectors(UP, _d.normalize());
+  mesh.scale.set(r, L, r);
+}
+
+/* ---------- data ---------- */
+let frames = [], N = 0, cursor = 0, playing = false, speed = 1, origin = null, isDemo = false, dropped = 0;
+
+function load(data, robotFrame){
+  if(!Array.isArray(data) || !data.length) throw new Error('empty');
+  if(!data[0].joints || !data[0].cube) throw new Error('missing joints or cube');
+  const cut = episodeEnd(data);
+  dropped = data.length - cut;
+  frames = data.slice(0, cut); N = frames.length; cursor = 0;
+  origin = robotFrame ? {x: TABLE_X, y: 0}
+                      : {x: frames[0].cube[0], y: frames[0].cube[1]};
+  document.getElementById('drop').classList.add('hidden');
+  document.getElementById('scrub').max = N-1;
+  document.getElementById('fAll').textContent = N;
+  document.getElementById('hRest').textContent = REST_H.toFixed(4);
+  const gaps = frames.filter(f => f.ee && f.base).map(f =>
+    Math.hypot(f.ee[0]-f.cube[0], f.ee[1]-f.cube[1], f.ee[2]-f.cube[2]));
+  document.getElementById('gapMin').textContent = gaps.length ? Math.min(...gaps).toFixed(3) : '—';
+  drawTrace();
+  paintVerdict();
+  apply(0);
+  setPlaying(true);
+}
+
+function heights(){ return frames.map(f => f.cube[2]); }
+
+/* Two ways a replay can fake a lift, both fixed here.
+
+   1. The cube spawns a few centimetres above the table and drops to rest over
+      the first frames. That drop sits above the lift gate, so a max() over the
+      whole episode reports a lift that never happened. Peak is measured only
+      from the frame the cube first reaches resting height.
+   2. When an episode ends the simulator teleports the cube back to its spawn
+      height. Those frames belong to the next episode. The replay is cut at the
+      reset: the recorder's done flag when present, otherwise a single-frame
+      jump back to the spawn height, which no real lift can produce. */
+function settledIndex(h){
+  const i = h.findIndex(v => v <= REST_H + 0.002);
+  return i < 0 ? 0 : i;
+}
+function settledPeak(h){ return Math.max(...h.slice(settledIndex(h))); }
+
+function episodeEnd(data){
+  const iDone = data.findIndex(f => f.done);
+  if(iDone >= 0) return iDone;
+  const h = data.map(f => f.cube[2]);
+  const spawn = h[0];   // already one step into the fall, so a few mm below true spawn
+  for(let i=1;i<h.length;i++){
+    if(h[i]-h[i-1] > 0.015 && Math.abs(h[i]-spawn) < 0.006) return i;
+  }
+  return h.length;
+}
+
+function apply(i){
+  cursor = i;
+  const f = frames[i];
+  drawFrame(f);
+  paintReadout(f, i);
+  document.getElementById('scrub').value = i;
+  document.getElementById('fNow').textContent = i;
+  drawTrace();
+}
+
+/* Draws one frame. Used both by the recorded replay and by live mode, which
+   has no frames array — only whatever the simulator wrote a moment ago. */
+function drawFrame(f){
+  const th = f.joints;
+  const {pts, flange} = solve(th);
+
+  for(let s=0;s<8;s++){
+    lay(segs[s], pts[s], pts[s+1], RADII[s]);
+    knuckles[s].position.copy(pts[s]);
+    knuckles[s].scale.setScalar(RADII[s]*1.14);
+  }
+
+  // fingers ride on the flange frame, opening along its local Y
+  const g = Math.max(0, Math.min(0.04, th[7] !== undefined ? th[7] : 0.04));
+  [[fingerL,+1],[fingerR,-1]].forEach(([m,sgn])=>{
+    m.position.set(0,0,0);
+    m.quaternion.setFromRotationMatrix(flange);
+    m.position.setFromMatrixPosition(flange);
+    m.translateY(sgn*g);
+    m.translateZ(0.031);
+  });
+
+  // With base recorded, cube and gripper are placed by measurement, in the
+  // robot's own frame. Without it, fall back to re-centring the cube on the table.
+  if(f.base && f.ee){
+    const c = new THREE.Vector3(f.cube[0]-f.base[0], f.cube[1]-f.base[1], f.cube[2]-f.base[2]);
+    const e = new THREE.Vector3(f.ee[0]-f.base[0],   f.ee[1]-f.base[1],   f.ee[2]-f.base[2]);
+    cube.position.copy(c);
+    eeDot.position.copy(e);
+    gapLine.geometry.setFromPoints([e, c]);
+    eeDot.visible = gapLine.visible = true;
+    document.getElementById('gapNow').textContent = e.distanceTo(c).toFixed(3);
+  } else {
+    cube.position.set(f.cube[0]-origin.x+TABLE_X, f.cube[1]-origin.y, f.cube[2]);
+    document.getElementById('gapNow').textContent = '—';
+  }
+}
+
+/* ---------- readout ---------- */
+const NAMES = ['J1','J2','J3','J4','J5','J6','J7'];
+function paintReadout(f, i){
+  document.getElementById('hNow').textContent = f.cube[2].toFixed(4);
+  if(N) document.getElementById('hMax').textContent = settledPeak(heights()).toFixed(4);
+
+  let rows = '';
+  for(let j=0;j<7;j++){
+    const v = f.joints[j] || 0;
+    const pct = Math.min(100, Math.abs(v)/Math.PI*100);
+    rows += `<tr><td>${NAMES[j]}</td><td>${v>=0?'+':''}${v.toFixed(4)}
+      <div class="bar"><i style="width:${pct}%;left:${v<0?(50-pct/2):50}%"></i></div></td></tr>`;
+  }
+  document.getElementById('joints').innerHTML = rows;
+
+  const g1 = f.joints[7] !== undefined ? f.joints[7] : 0;
+  const g2 = f.joints[8] !== undefined ? f.joints[8] : 0;
+  const open = ((g1+g2)*1000).toFixed(1);
+  document.getElementById('grip').innerHTML =
+    `<tr><td>OPEN</td><td>${open} mm</td></tr>
+     <tr><td>STATE</td><td>${(g1+g2) < 0.06 ? 'closing' : 'open'}</td></tr>`;
+}
+
+function paintVerdict(){
+  const h = heights();
+  const peak = settledPeak(h);
+  const lifted = peak > LIFT_H;
+  const el = document.getElementById('verdict');
+  el.className = 'verdict ' + (lifted ? 'v-lift' : 'v-rest');
+  document.getElementById('verdictText').textContent = lifted ? 'Lifted' : 'Not lifted';
+  const rise = (peak - REST_H);
+  document.getElementById('verdictSub').innerHTML = lifted
+    ? `Peak height cleared the ${LIFT_H.toFixed(3)} m gate by
+       <span class="num">${(peak-LIFT_H).toFixed(4)} m</span>.`
+    : `Peak height reached <span class="num">${peak.toFixed(4)} m</span> —
+       <span class="num">${Math.abs(LIFT_H-peak).toFixed(4)} m</span> short of the gate.
+       The cube rose <span class="num">${rise.toFixed(4)} m</span> from rest.`;
+  if(dropped > 0){
+    document.getElementById('verdictSub').innerHTML +=
+      `<br><span class="num">${dropped}</span> frame${dropped>1?'s':''} after the episode reset dropped.`;
+  }
+}
+
+/* ---------- trace ---------- */
+const tc = document.getElementById('trace');
+function drawTrace(){
+  const dpr = Math.min(devicePixelRatio,2);
+  const w = tc.clientWidth, hgt = tc.clientHeight;
+  tc.width = w*dpr; tc.height = hgt*dpr;
+  const g = tc.getContext('2d');
+  g.setTransform(dpr,0,0,dpr,0,0);
+  g.clearRect(0,0,w,hgt);
+  if(!N) return;
+
+  const h = heights();
+  const lo = Math.min(REST_H*0.55, Math.min(...h));
+  const hi = Math.max(LIFT_H*1.5, Math.max(...h)*1.12);
+  const Y = v => hgt - 6 - (v-lo)/(hi-lo)*(hgt-14);
+  const X = i => 4 + i/(N-1)*(w-8);
+
+  const line = (v,color,dash)=>{
+    g.setLineDash(dash); g.strokeStyle=color; g.lineWidth=1;
+    g.beginPath(); g.moveTo(0,Y(v)); g.lineTo(w,Y(v)); g.stroke();
+  };
+  line(LIFT_H,'#5FD98B',[3,3]);
+  line(REST_H,'#E8654F',[1,3]);
+  g.setLineDash([]);
+
+  g.strokeStyle='#FFB627'; g.lineWidth=1.5; g.lineJoin='round';
+  g.beginPath();
+  h.forEach((v,i)=> i? g.lineTo(X(i),Y(v)) : g.moveTo(X(i),Y(v)));
+  g.stroke();
+
+  const px = X(cursor), py = Y(h[cursor]);
+  g.strokeStyle='rgba(232,230,225,.22)'; g.lineWidth=1;
+  g.beginPath(); g.moveTo(px,0); g.lineTo(px,hgt); g.stroke();
+  g.fillStyle='#E8E6E1';
+  g.beginPath(); g.arc(px,py,2.6,0,Math.PI*2); g.fill();
+}
+
+/* ---------- transport ---------- */
+const scrub = document.getElementById('scrub');
+const btnPlay = document.getElementById('btnPlay');
+const ICON_PLAY = '<svg viewBox="0 0 10 12"><polygon points="0,0 10,6 0,12"/></svg>';
+const ICON_PAUSE= '<svg viewBox="0 0 10 12"><rect x="0" y="0" width="3.4" height="12"/><rect x="6.6" y="0" width="3.4" height="12"/></svg>';
+
+function setPlaying(v){
+  playing = v && N>0;
+  btnPlay.innerHTML = playing ? ICON_PAUSE : ICON_PLAY;
+  btnPlay.setAttribute('aria-label', playing ? 'Pause' : 'Play');
+}
+btnPlay.onclick = ()=> setPlaying(!playing);
+scrub.oninput = e => { setPlaying(false); apply(+e.target.value); };
+document.querySelectorAll('.speeds button').forEach(b=>{
+  b.onclick = ()=>{
+    speed = +b.dataset.s;
+    document.querySelectorAll('.speeds button').forEach(x=>x.classList.toggle('on', x===b));
+  };
+});
+addEventListener('keydown', e=>{
+  if(e.code==='Space'){ e.preventDefault(); setPlaying(!playing); }
+  if(e.code==='ArrowRight'&&N){ setPlaying(false); apply(Math.min(N-1,cursor+1)); }
+  if(e.code==='ArrowLeft' &&N){ setPlaying(false); apply(Math.max(0,cursor-1)); }
+});
+
+/* ---------- live mode ----------
+   The simulator cannot render, but it can write. live_replay.py overwrites
+   live.json with the current frame every step; this polls that file. Same
+   drawing code as the replay — only the source of the frame differs. */
+const btnLive = document.getElementById('btnLive');
+let liveTimer = null;
+
+function stopLive(){
+  if(liveTimer) clearInterval(liveTimer);
+  liveTimer = null;
+  btnLive.textContent = 'Go live';
+  document.getElementById('verdictText').textContent = N ? 'Not lifted' : 'Awaiting data';
+}
+
+function startLive(){
+  setPlaying(false);
+  document.getElementById('drop').classList.add('hidden');
+  btnLive.textContent = 'Stop live';
+  document.getElementById('verdict').className = 'verdict v-none';
+  document.getElementById('verdictText').textContent = 'Live';
+  document.getElementById('verdictSub').textContent = 'Reading live.json as the simulator writes it.';
+  let missed = 0;
+  liveTimer = setInterval(async () => {
+    try{
+      const r = await fetch('live.json?t=' + Date.now(), {cache:'no-store'});
+      if(!r.ok) throw new Error('no file');
+      const f = await r.json();
+      drawFrame(f);
+      paintReadout(f, 0);
+      document.getElementById('fNow').textContent = f.step;
+      missed = 0;
+    }catch(e){
+      if(++missed === 30)
+        document.getElementById('verdictSub').textContent =
+          'No live.json yet — start live_replay.py in the container.';
+    }
+  }, 100);
+}
+btnLive.onclick = () => liveTimer ? stopLive() : startLive();
+
+/* ---------- file in ---------- */
+const fileEl = document.getElementById('file');
+const pick = ()=> fileEl.click();
+document.getElementById('btnLoad').onclick = pick;
+document.getElementById('btnLoad2').onclick = pick;
+fileEl.onchange = e => { const f=e.target.files[0]; if(f) read(f); };
+
+function read(file){
+  const r = new FileReader();
+  r.onload = ()=>{
+    try { isDemo=false; load(JSON.parse(r.result)); }
+    catch(err){
+      const d = document.getElementById('drop');
+      d.querySelector('h2').textContent = 'That file could not be read';
+      d.querySelector('p').innerHTML =
+        'Expected an array of frames, each with <span class="num">joints</span> and ' +
+        '<span class="num">cube</span>. Re-run <span class="num">record_motion.py</span> and try again.';
+    }
+  };
+  r.readAsText(file);
+}
+const drop = document.getElementById('drop');
+['dragenter','dragover'].forEach(t=> stage.addEventListener(t, e=>{e.preventDefault(); drop.classList.add('over');}));
+['dragleave','drop'].forEach(t=> stage.addEventListener(t, e=>{e.preventDefault(); drop.classList.remove('over');}));
+stage.addEventListener('drop', e=>{ const f=e.dataTransfer.files[0]; if(f) read(f); });
+
+/* No synthetic data lives in this tool. Every frame it draws came out of
+   Isaac Sim's physics engine and was written by record_motion.py. */
+
+
+
+/* ---------- camera ---------- */
+let yaw=-0.72, pitch=0.42, dist=2.15;
+const target = new THREE.Vector3(0.34,0,0.34);
+function place(){
+  const cp = Math.cos(pitch);
+  camera.position.set(
+    target.x + dist*cp*Math.cos(yaw),
+    target.y + dist*cp*Math.sin(yaw),
+    target.z + dist*Math.sin(pitch)
+  );
+  const p = target.clone().applyMatrix4(new THREE.Matrix4().makeRotationX(-Math.PI/2));
+  camera.position.applyMatrix4(new THREE.Matrix4().makeRotationX(-Math.PI/2));
+  camera.lookAt(p);
+}
+let drag=null;
+renderer.domElement.addEventListener('mousedown', e=>{ drag={x:e.clientX,y:e.clientY,b:e.button}; });
+addEventListener('mouseup', ()=> drag=null);
+addEventListener('mousemove', e=>{
+  if(!drag) return;
+  const dx=e.clientX-drag.x, dy=e.clientY-drag.y;
+  drag.x=e.clientX; drag.y=e.clientY;
+  if(drag.b===2){ target.x -= dx*0.0022; target.z += dy*0.0022; }
+  else { yaw -= dx*0.006; pitch = Math.max(-0.25, Math.min(1.35, pitch + dy*0.005)); }
+});
+renderer.domElement.addEventListener('contextmenu', e=>e.preventDefault());
+renderer.domElement.addEventListener('wheel', e=>{
+  e.preventDefault();
+  dist = Math.max(0.65, Math.min(5, dist * (1 + Math.sign(e.deltaY)*0.09)));
+},{passive:false});
+let touch=null;
+renderer.domElement.addEventListener('touchstart', e=>{ touch={x:e.touches[0].clientX,y:e.touches[0].clientY}; },{passive:true});
+renderer.domElement.addEventListener('touchmove', e=>{
+  if(!touch) return;
+  const t=e.touches[0], dx=t.clientX-touch.x, dy=t.clientY-touch.y;
+  touch={x:t.clientX,y:t.clientY};
+  yaw -= dx*0.008; pitch = Math.max(-0.25, Math.min(1.35, pitch + dy*0.006));
+},{passive:true});
+
+/* ---------- loop ---------- */
+function size(){
+  const w = stage.clientWidth, h = stage.clientHeight;
+  renderer.setSize(w,h,false);
+  camera.aspect = w/h; camera.updateProjectionMatrix();
+  drawTrace();
+}
+addEventListener('resize', size);
+
+let last = performance.now(), acc = 0;
+(function loop(now){
+  requestAnimationFrame(loop);
+  const dt = now-last; last = now;
+  if(playing && N>1){
+    acc += dt*speed;
+    const per = 1000/30;
+    while(acc >= per){ acc -= per; apply((cursor+1) % N); }
+  }
+  place();
+  renderer.render(scene, camera);
+})(performance.now());
+
+size();
+apply.length; // noop
+solve([0,-0.55,0,-2.3,0,1.75,0.78]).pts.forEach((p,i)=>{ if(i<8) knuckles[i].position.copy(p); });
+(function idle(){ // draw a neutral pose before any data loads
+  const {pts, flange} = solve([0,-0.55,0,-2.3,0,1.75,0.78]);
+  for(let s=0;s<8;s++){ lay(segs[s], pts[s], pts[s+1], RADII[s]);
+    knuckles[s].position.copy(pts[s]); knuckles[s].scale.setScalar(RADII[s]*1.14); }
+  [[fingerL,+1],[fingerR,-1]].forEach(([m,sgn])=>{
+    m.quaternion.setFromRotationMatrix(flange);
+    m.position.setFromMatrixPosition(flange);
+    m.translateY(sgn*0.04); m.translateZ(0.031);
+  });
+  cube.position.set(TABLE_X, 0, REST_H);
+})();
+</script>
+</body>
+</html>
