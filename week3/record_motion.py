@@ -52,15 +52,31 @@ with open(OUT, "w") as f:
 with open(OUT.replace(".json", "_summary.txt"), "w") as f:
     z = [fr["cube"][2] for fr in frames]
     gap = [sum((fr["ee"][i] - fr["cube"][i]) ** 2 for i in range(3)) ** 0.5 for fr in frames]
-    grip = [(fr["joints"][7] + fr["joints"][8]) / 2 for fr in frames]
-    shut = next((i for i, g in enumerate(grip) if g < 0.005), None)
+    fsum = [fr["joints"][7] + fr["joints"][8] for fr in frames]
+    # a grasp is fingers stopped BY the cube (sum near 0.042), not a shut
+    # fist (~0.004) — the old `< 0.005` test could never see a successful
+    # grasp, only an empty fist
+    grasp_frames = [i for i in range(len(frames))
+                    if abs(fsum[i] - 0.042) < 0.012 and gap[i] < 0.03]
+    fist = next((i for i, s in enumerate(fsum) if s < 0.01), None)
     f.write(f"checkpoint {CKPT}\nframes {len(frames)}\n")
     f.write(f"cube z: start {z[0]:.4f} min {min(z):.4f} max {max(z):.4f} end {z[-1]:.4f}\n")
     f.write(f"gripper-cube distance: start {gap[0]:.4f} min {min(gap):.4f} (frame {gap.index(min(gap))}) end {gap[-1]:.4f}\n")
-    if shut is not None:
-        f.write(f"fingers first shut at frame {shut}, gripper-cube distance there {gap[shut]:.4f} m\n")
+    if grasp_frames:
+        g0 = grasp_frames[0]
+        f.write(f"GRASP: fingers stopped on the cube for {len(grasp_frames)} frames, "
+                f"first at frame {g0} (finger sum {fsum[g0]:.4f}, gap {gap[g0]:.4f})\n")
+        lifted = [i for i in grasp_frames if z[i] > 0.035]
+        if lifted:
+            f.write(f"HELD LIFT: cube above 0.035 while grasped for {len(lifted)} frames, "
+                    f"first at frame {lifted[0]} (cube z {z[lifted[0]]:.4f})\n")
+        else:
+            f.write("no held lift yet: grasped but cube never above 0.035\n")
     else:
-        f.write("fingers never fully shut\n")
+        i = fsum.index(min(fsum))
+        f.write(f"no grasp: min finger sum {fsum[i]:.4f} at frame {i} (gap there {gap[i]:.4f})\n")
+    if fist is not None:
+        f.write(f"note: empty fist (sum < 0.01) at frame {fist}, gap {gap[fist]:.4f} — closing on nothing\n")
 
 vec.close()
 simulation_app.close()

@@ -26,14 +26,18 @@ for name in FILES:
 
     base = fr[0]["base"]
     cube_b = rel(fr[0]["cube"], base)
-    grip = [(f["joints"][7] + f["joints"][8]) / 2 for f in fr]
-    shut = next((i for i, g in enumerate(grip) if g < 0.005), None)
+    fsum = [f["joints"][7] + f["joints"][8] for f in fr]
     gaps = [dist(f["ee"], f["cube"]) for f in fr]
+    # grasp = fingers stopped BY the cube (sum near 0.042) at the gripper;
+    # a shut fist (~0.004) is closing on nothing and is reported separately
+    grasp = next((i for i in range(len(fr))
+                  if abs(fsum[i] - 0.042) < 0.012 and gaps[i] < 0.03), None)
+    fist = next((i for i, s in enumerate(fsum) if s < 0.01), None)
     imin = gaps.index(min(gaps))
 
     print(f"=== {name}  ({len(fr)} frames)")
     print(f"  cube, relative to robot base: x {cube_b[0]:+.3f}  y {cube_b[1]:+.3f}  z {cube_b[2]:+.3f}")
-    for label, i in [("start", 0), ("fingers shut", shut), ("closest", imin), ("end", len(fr) - 1)]:
+    for label, i in [("start", 0), ("GRASPED", grasp), ("empty fist", fist), ("closest", imin), ("end", len(fr) - 1)]:
         if i is None:
             continue
         ee_b = rel(fr[i]["ee"], base)

@@ -1,15 +1,29 @@
-"""Rewards that pay for closing on the cube — and only count a lift that is held.
+"""Rewards that make every step toward a grasp pay more than the last.
 
-Two lessons are baked in here, both found by replaying checkpoints rather than
-reading reward curves:
+The stage-9 autopsy found the old design guilty: approach was multiplied by a
+hand-matching term, which quietly made "hover 2-3 cm out, hand open" the best
+state the robot could actually reach. Every 10M run converged there, and after
+the gripper-head reset PPO re-learned "open" from a zeroed head (grip bias
++0.017 -> +0.062 over 3M steps, monotonic) — the gradient itself preferred it.
 
-1. Every term is smooth. An earlier version flipped at exactly 3 cm, which halved
-   the pay the instant the gripper arrived, so the policy learned to hover just
-   outside the grasp zone instead of entering it.
-2. Height alone is not a lift. The stock lifting and goal terms pay whenever the
-   centre of the cube passes a height, so batting the cube over pays the biggest
-   prize in the environment (weight 15 + 16) with the hand wide open. Here that
-   height only counts while the cube is actually in a closed gripper.
+Three rules replace it:
+
+1. Approach pays with ANY hand state, all the way in. No term is allowed to
+   make the robot poorer for standing closer to the cube.
+2. Closing pays only where closing means grasping. The pay is a bump that
+   peaks where the cube physically stops the fingers (sum 0.042 — measured in
+   finger_report.txt), gated smoothly by being at the cube. An empty fist
+   scores zero, finger-twitching 4 cm out scores ~zero, and the very first
+   close command at the cube already pays (continuous — no cliffs, the
+   lesson replays taught us twice).
+3. Height still pays only while the cube is truly held — and "held" now means
+   the fingers are stopped BY the cube, which an empty shut fist (sum ~0.004)
+   can no longer satisfy. The old gate (sum < 0.06) counted a fist clenched
+   next to the cube as a hold.
+
+The staircase this buys, in reward per step: hover at 3 cm ~3.9 -> open hand
+at 5 mm ~5.5 -> grasped ~11 -> lifted and carrying ~31. Monotonic. The valley
+that swallowed stages 1-9 is gone.
 """
 
 from __future__ import annotations
@@ -20,10 +34,30 @@ from isaaclab.sensors import FrameTransformer
 from isaaclab.envs import ManagerBasedRLEnv
 from isaaclab_tasks.manager_based.manipulation.lift import mdp as lift_mdp
 
-# fingers are commanded open (0.04 each) or shut (0.0); a cube this size stops
-# them near 0.042 total, so 0.06 separates "shut on something" from "open"
-CLOSED_SUM = 0.06
+# fingers are commanded open (0.04 each) or shut (0.0); the 4.2 cm cube stops
+# them at a joint sum of ~0.042, an empty fist reaches ~0.004
 OPEN_SUM = 0.08
+GRASP_SUM = 0.042
+
+
+def _finger_sum(robot: Articulation) -> torch.Tensor:
+    return robot.data.joint_pos[:, -2:].sum(dim=1)
+
+
+def _on_cube_bump(fsum: torch.Tensor) -> torch.Tensor:
+    """1.0 where the cube stops the fingers, falling to 0 at fully open AND at
+    an empty fist. Rewarding the stop point instead of raw closure is what
+    makes a clenched empty fist worthless."""
+    return (1.0 - (fsum - GRASP_SUM).abs() / (OPEN_SUM - GRASP_SUM)).clamp(min=0.0)
+
+
+def _ee_cube_distance(
+    env: ManagerBasedRLEnv, object_cfg: SceneEntityCfg, ee_frame_cfg: SceneEntityCfg
+) -> torch.Tensor:
+    obj: RigidObject = env.scene[object_cfg.name]
+    ee_frame: FrameTransformer = env.scene[ee_frame_cfg.name]
+    ee_pos = ee_frame.data.target_pos_w[..., 0, :]
+    return torch.norm(obj.data.root_pos_w - ee_pos, dim=1)
 
 
 def _held(
@@ -33,67 +67,53 @@ def _held(
     ee_frame_cfg: SceneEntityCfg,
     robot_cfg: SceneEntityCfg,
 ) -> torch.Tensor:
-    """True where the cube is at the gripper AND the fingers are shut on it."""
-    obj: RigidObject = env.scene[object_cfg.name]
-    ee_frame: FrameTransformer = env.scene[ee_frame_cfg.name]
+    """True where the cube is at the gripper AND the fingers are stopped by it.
+    bump > 0.5 means the finger sum is within ~2 mm of the cube-stop point —
+    an empty fist (~0.004) and an open hand (0.08) both fail it."""
     robot: Articulation = env.scene[robot_cfg.name]
-
-    ee_pos = ee_frame.data.target_pos_w[..., 0, :]
-    near = torch.norm(obj.data.root_pos_w - ee_pos, dim=1) < hold_distance
-    shut = robot.data.joint_pos[:, -2:].sum(dim=1) < CLOSED_SUM
-    return near & shut
+    near = _ee_cube_distance(env, object_cfg, ee_frame_cfg) < hold_distance
+    stopped_by_cube = _on_cube_bump(_finger_sum(robot)) > 0.5
+    return near & stopped_by_cube
 
 
-def object_is_grasped(
+def approach_object(
     env: ManagerBasedRLEnv,
-    grasp_distance: float = 0.03,
+    object_cfg: SceneEntityCfg = SceneEntityCfg("object"),
+    ee_frame_cfg: SceneEntityCfg = SceneEntityCfg("ee_frame"),
+) -> torch.Tensor:
+    """Pull the gripper to the cube, hand state ignored. Coarse ramp carries it
+    across the table; the fine ramp keeps the slope alive over the last few
+    centimetres, so at 3 cm the robot still earns ~+1.5/step by coming in."""
+    distance = _ee_cube_distance(env, object_cfg, ee_frame_cfg)
+    coarse = 1.0 - torch.tanh(distance / 0.25)
+    fine = 1.0 - torch.tanh(distance / 0.03)
+    return 0.6 * coarse + 0.4 * fine
+
+
+def fingers_on_cube(
+    env: ManagerBasedRLEnv,
+    in_position_std: float = 0.015,
     object_cfg: SceneEntityCfg = SceneEntityCfg("object"),
     ee_frame_cfg: SceneEntityCfg = SceneEntityCfg("ee_frame"),
     robot_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
 ) -> torch.Tensor:
-    """Grows as the gripper closes on the cube, and grows further when the fingers
-    do what that distance asks for: open on the way in, shut at the cube."""
-    obj: RigidObject = env.scene[object_cfg.name]
-    ee_frame: FrameTransformer = env.scene[ee_frame_cfg.name]
+    """Pay for closing exactly where closing means grasping.
+
+    The position gate (1 - tanh(d / 0.015)) is ~1 with the TCP on the cube and
+    ~0.04 at 3 cm, so the twitch-at-a-distance exploit of stage 9 earns
+    nothing. The bump term rises along the whole close trajectory at the cube
+    (first close command: 0.22, second: 0.44, cube-stop: 1.0), so a single
+    exploratory close at the right place is immediately reinforced."""
     robot: Articulation = env.scene[robot_cfg.name]
-
-    ee_pos = ee_frame.data.target_pos_w[..., 0, :]
-    distance = torch.norm(obj.data.root_pos_w - ee_pos, dim=1)
-
-    # coarse pulls it across the table; fine pays for the last few centimetres,
-    # where the coarse ramp has already flattened out
-    coarse = 1.0 - torch.tanh(distance / 0.25)
-    fine = 1.0 - torch.tanh(distance / 0.03)
-    approach = 0.6 * coarse + 0.4 * fine
-
-    # How far the fingers have travelled from wide open to shut, as 0..1.
-    # A threshold here pays nothing for fingers that move 8 mm, and measurement
-    # shows they need three consecutive close commands to cross any threshold —
-    # which independent per-step exploration effectively never samples. Continuous
-    # means one close command already pays slightly more than none.
-    closed_frac = (1.0 - robot.data.joint_pos[:, -2:].sum(dim=1) / OPEN_SUM).clamp(0.0, 1.0)
-    # Crossover near 1.65 cm — the distance at which the cube (0.042 m wide) is
-    # actually between the fingers (0.08 m span). This was 0.08, i.e. told to
-    # close from 4.4 cm, set back when the arm could only reach 2.4 cm. The arm
-    # then learned to reach 0.3 cm, and the stale value made it shut its fist
-    # 5.7 cm out and jam against the cube it could no longer enclose. A reward
-    # parameter encodes an assumption about the current policy; when the policy
-    # improves, recheck it.
-    want_closed = 1.0 - torch.tanh(distance / 0.03)
-    hand_ok = 1.0 - (closed_frac - want_closed).abs()
-
-    # The hand term was 0.75 + 0.25 * hand_ok, which paid +0.10 per step for a
-    # first close — too small to compete, and the gripper output drifted further
-    # open across a whole 10M run. At 0.5 it pays +0.20 for the first close and
-    # +1.80 for a full grasp, while approach stays monotonic (checked at every
-    # distance the arm visits, open hand).
-    return approach * (0.5 + 0.5 * hand_ok)
+    distance = _ee_cube_distance(env, object_cfg, ee_frame_cfg)
+    in_position = 1.0 - torch.tanh(distance / in_position_std)
+    return in_position * _on_cube_bump(_finger_sum(robot))
 
 
 def object_lifted_in_hand(
     env: ManagerBasedRLEnv,
     minimal_height: float,
-    hold_distance: float = 0.05,
+    hold_distance: float = 0.03,
     object_cfg: SceneEntityCfg = SceneEntityCfg("object"),
     ee_frame_cfg: SceneEntityCfg = SceneEntityCfg("ee_frame"),
     robot_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
@@ -108,7 +128,7 @@ def object_goal_distance_in_hand(
     std: float,
     minimal_height: float,
     command_name: str,
-    hold_distance: float = 0.05,
+    hold_distance: float = 0.03,
     robot_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
     object_cfg: SceneEntityCfg = SceneEntityCfg("object"),
     ee_frame_cfg: SceneEntityCfg = SceneEntityCfg("ee_frame"),
