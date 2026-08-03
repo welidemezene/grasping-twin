@@ -4,3 +4,5 @@ Untitled.ipynb
 week2/checkpoints/
 week2/logs/
 week2/videos/
+__pycache__/
+viewer/live.json
