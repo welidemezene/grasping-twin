@@ -1,0 +1,5 @@
+checkpoint week3/checkpoints/stage6_4992000_steps
+frames 249
+cube z: start 0.0521 min 0.0209 max 0.0521 end 0.0210
+gripper-cube distance: start 0.3356 min 0.0034 (frame 53) end 0.0328
+fingers never fully shut
