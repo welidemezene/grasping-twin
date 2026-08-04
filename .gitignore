@@ -6,3 +6,5 @@ week2/logs/
 week2/videos/
 __pycache__/
 viewer/live.json
+viewer/live.json.tmp
+.claude/
