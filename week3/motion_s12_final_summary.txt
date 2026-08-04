@@ -1,0 +1,6 @@
+checkpoint week3/checkpoints/stage12_final
+frames 249
+cube z: start 0.0521 min 0.0210 max 0.0521 end 0.0210
+gripper-cube distance: start 0.3368 min 0.0007 (frame 109) end 0.0409
+GRASP: fingers stopped on the cube for 1 frames, first at frame 58 (finger sum 0.0540, gap 0.0161)
+no held lift yet: grasped but cube never above 0.035
