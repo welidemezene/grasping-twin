@@ -16,9 +16,10 @@ from curriculum_lift_cfg import FrankaLiftStage1Cfg
 
 CKPT = sys.argv[1] if len(sys.argv) > 1 else "week3/checkpoints/stage1_final"
 OUT  = sys.argv[2] if len(sys.argv) > 2 else "../viewer/live.json"
+NUM  = int(sys.argv[3]) if len(sys.argv) > 3 else 512
 
 env_cfg = FrankaLiftStage1Cfg()
-env_cfg.scene.num_envs = 512
+env_cfg.scene.num_envs = NUM
 env = gym.make("Isaac-Lift-Cube-Franka-v0", cfg=env_cfg)
 raw = env.unwrapped
 vec = Sb3VecEnvWrapper(env)
