@@ -509,12 +509,17 @@ function drawFrame(f){
 
   // fingers ride on the flange frame, opening along its local Y. They END at
   // the TCP (flange + TCP_Z), so their centres sit half a finger back from it.
-  const g = Math.max(0, Math.min(0.04, th[7] !== undefined ? th[7] : 0.04));
-  [[fingerL,+1],[fingerR,-1]].forEach(([m,sgn])=>{
+  // Each finger uses ITS OWN joint: this used to draw both from joints[7],
+  // which rendered them perfectly symmetric even when they were not. The two
+  // differ by ~2 mm during a real grasp, and an uneven grip is exactly the kind
+  // of thing the viewer exists to reveal.
+  const clamp = v => Math.max(0, Math.min(0.04, v !== undefined ? v : 0.04));
+  const gL = clamp(th[7]), gR = clamp(th[8] !== undefined ? th[8] : th[7]);
+  [[fingerL,+1,gL],[fingerR,-1,gR]].forEach(([m,sgn,gg])=>{
     m.position.set(0,0,0);
     m.quaternion.setFromRotationMatrix(flange);
     m.position.setFromMatrixPosition(flange);
-    m.translateY(sgn*g);
+    m.translateY(sgn*gg);
     m.translateZ(TCP_Z - FINGER_L/2);
   });
   hand.quaternion.setFromRotationMatrix(flange);
