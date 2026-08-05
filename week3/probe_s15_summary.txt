@@ -1,0 +1,15 @@
+checkpoint week3/checkpoints/stage15_final   hold 5   frames 249   near-frames (gap<0.005) 3
+grasp band: face-on stop 0.0420 | diagonal stop 0.0594 | open 0.0800
+reward _held gate: finger sum < 0.0610   |   replay grasp test: finger sum < 0.0540
+
+1. COMMAND: close commanded on 3/3 near-frames; longest consecutive close run anywhere: 224 frames
+   min finger sum near the cube: 0.0495
+2. ORIENTATION: yaw to nearest cube face 13.0-26.0 deg (mean 18.1); 0 = face-on, 45 = corner-on
+3. REWARD: _held fired on 3/3 near-frames; bump 0.671-0.803; fingers_on_cube 2.86-3.59 of a possible 6.00
+
+VERDICT
+  COMMANDING AND SUSTAINED, STOPS IN THE DISPUTED ZONE (0.054-0.061). The
+  reward calls this held; the replay does not. Decide which ruler is right
+  before another stage -- see yaw_to_cube_deg above for whether contact is real.
+
+  cube z moved 0.0048 m across the near-frames (nudged at contact)

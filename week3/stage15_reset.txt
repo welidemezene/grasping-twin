@@ -1,0 +1,13 @@
+start_from week3/checkpoints/stage14_final
+STAGE 14 LEFT: grasp real (finger sum 0.0429 vs cube-stop 0.0420),
+  but 133 finger direction reversals in 249 frames and the cube
+  lifted only 13.2 mm before being dropped.
+gripper std at load 1.3140
+gripper std floor anneals 0.50 -> 0.10 over 10000000 steps
+ent_coef 0.0030 (down from stage 14's 0.010 -- explore less, commit more)
+learning_rate 1.0e-04
+NEW REWARD: lifting_progress, tanh ramp from rest height 0.0210 while
+  held, weight 8.0. The step bonus at 0.035 stays on top at weight 15.
+  Stage 14 earned NOTHING for 13.2 mm of lift; now every mm pays.
+sticky gripper: decisions held for 5 frames
+stock curriculum disabled: action_rate and joint_vel stay at base weights
