@@ -1,0 +1,17 @@
+start_from week3/checkpoints/stage15_final
+STAGE 15 MEASURED (check_airborne.py, 512 trials, cube pose not height):
+  grasped 512/512 (100%), grasped AND airborne 507/512 (99.0%),
+  median lift while held 0.0099 m, cube tilt up to 79 deg.
+  The grasp is solved; the lift is minimal and the carry is a corner pinch.
+gripper std at load 1.2064
+gripper std floor anneals 0.10 -> 0.05 over 10000000 steps
+ent_coef 0.0020 (stage 15 used 0.003)
+learning_rate 1.0e-04
+REWARD CHANGE 1: lifting_progress now 0.4*tanh(h/0.02) + 0.6*tanh(h/0.10),
+  weight 8 -> 12. The old single tanh(h/0.02) was saturated by 4 cm, so a
+  15 cm lift paid barely more than 2 cm and the policy took the minimum.
+REWARD CHANGE 2: cube_upright_in_hand, weight 4. Pays for keeping a face
+  level while held; a corner balance is worth exactly zero. Additive, not
+  multiplied -- stages 1-9 proved multiplied channels create valleys.
+sticky gripper: decisions held for 5 frames
+stock curriculum disabled: action_rate and joint_vel stay at base weights
