@@ -27,6 +27,7 @@ that swallowed stages 1-9 is gone.
 """
 
 from __future__ import annotations
+import math
 import torch
 from isaaclab.assets import RigidObject, Articulation
 from isaaclab.managers import SceneEntityCfg
@@ -123,10 +124,45 @@ def object_lifted_in_hand(
     return lifted * _held(env, hold_distance, object_cfg, ee_frame_cfg, robot_cfg).float()
 
 
+def cube_upright_in_hand(
+    env: ManagerBasedRLEnv,
+    hold_distance: float = 0.03,
+    object_cfg: SceneEntityCfg = SceneEntityCfg("object"),
+    ee_frame_cfg: SceneEntityCfg = SceneEntityCfg("ee_frame"),
+    robot_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
+) -> torch.Tensor:
+    """Pay for carrying the cube SQUARE instead of pinched on a corner.
+
+    Stage 15 grasps 100% of the time and clears the table 99%, but tilts the
+    cube up to 79 degrees doing it — a corner pinch, not a grip. Nothing in the
+    reward cared about orientation, so the ugly grasp scored the same as a clean
+    one.
+
+    A cube is "level" when ANY of its faces is horizontal, so this looks at all
+    three local axes and takes the one most aligned with world up. That value is
+    1.0 with a face level and 1/sqrt(3) = 0.577 when balanced on a corner, which
+    is the floor; rescaling that range to [0, 1] makes a corner-balance worth
+    exactly nothing and a square carry worth full marks.
+    """
+    obj: RigidObject = env.scene[object_cfg.name]
+    q = obj.data.root_quat_w
+    w, x, y, z = q[:, 0], q[:, 1], q[:, 2], q[:, 3]
+    # world-z components of the cube's three local axes
+    up_x = (2.0 * (x * z - w * y)).abs()
+    up_y = (2.0 * (y * z + w * x)).abs()
+    up_z = (1.0 - 2.0 * (x * x + y * y)).abs()
+    best = torch.maximum(torch.maximum(up_x, up_y), up_z)
+    corner = 1.0 / math.sqrt(3.0)
+    upright = ((best - corner) / (1.0 - corner)).clamp(0.0, 1.0)
+    return upright * _held(env, hold_distance, object_cfg, ee_frame_cfg, robot_cfg).float()
+
+
 def lifting_progress_in_hand(
     env: ManagerBasedRLEnv,
     rest_height: float = 0.0210,
     std: float = 0.02,
+    far_std: float = 0.10,
+    far_mix: float = 0.6,
     hold_distance: float = 0.03,
     object_cfg: SceneEntityCfg = SceneEntityCfg("object"),
     ee_frame_cfg: SceneEntityCfg = SceneEntityCfg("ee_frame"),
@@ -144,10 +180,19 @@ def lifting_progress_in_hand(
     This ramps smoothly from the resting height, so the first millimetre already
     pays and each one after pays more. The step-function bonus stays on top as
     the target worth aiming for.
+
+    TWO ramps, after stage 15. A single tanh(h / 0.02) is saturated by ~4 cm, so
+    a 15 cm lift scored barely more than a 2 cm one and the policy settled on a
+    median lift of 9.9 mm — technically airborne, visually nothing. The near
+    ramp keeps the fine gradient that got the lift started; the far ramp
+    (tanh(h / 0.10), most of the weight) keeps paying all the way up, so higher
+    is always better.
     """
     obj: RigidObject = env.scene[object_cfg.name]
     height = (obj.data.root_pos_w[:, 2] - rest_height).clamp(min=0.0)
-    ramp = torch.tanh(height / std)
+    near = torch.tanh(height / std)
+    far = torch.tanh(height / far_std)
+    ramp = (1.0 - far_mix) * near + far_mix * far
     return ramp * _held(env, hold_distance, object_cfg, ee_frame_cfg, robot_cfg).float()
 
 
