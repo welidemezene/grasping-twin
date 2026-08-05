@@ -123,6 +123,34 @@ def object_lifted_in_hand(
     return lifted * _held(env, hold_distance, object_cfg, ee_frame_cfg, robot_cfg).float()
 
 
+def lifting_progress_in_hand(
+    env: ManagerBasedRLEnv,
+    rest_height: float = 0.0210,
+    std: float = 0.02,
+    hold_distance: float = 0.03,
+    object_cfg: SceneEntityCfg = SceneEntityCfg("object"),
+    ee_frame_cfg: SceneEntityCfg = SceneEntityCfg("ee_frame"),
+    robot_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
+) -> torch.Tensor:
+    """Pay for EVERY millimetre the held cube rises, not only past a threshold.
+
+    Stage 14 finally grasped, carried the cube 13.2 mm off the table — and
+    earned nothing for it, because `object_is_lifted` is a step function at
+    0.035 m. Below the gate the robot cannot tell 1 mm from 13 mm, so there is
+    no gradient pulling upward and the lift can only be found by stumbling
+    across the threshold whole. That is the same failure that kept the gripper
+    shut for nine stages, one layer up: a behaviour with no path to it.
+
+    This ramps smoothly from the resting height, so the first millimetre already
+    pays and each one after pays more. The step-function bonus stays on top as
+    the target worth aiming for.
+    """
+    obj: RigidObject = env.scene[object_cfg.name]
+    height = (obj.data.root_pos_w[:, 2] - rest_height).clamp(min=0.0)
+    ramp = torch.tanh(height / std)
+    return ramp * _held(env, hold_distance, object_cfg, ee_frame_cfg, robot_cfg).float()
+
+
 def object_goal_distance_in_hand(
     env: ManagerBasedRLEnv,
     std: float,
