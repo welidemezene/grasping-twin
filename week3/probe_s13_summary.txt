@@ -1,0 +1,14 @@
+checkpoint week3/checkpoints/stage13_final   hold 5   frames 249   near-frames (gap<0.005) 127
+grasp band: face-on stop 0.0420 | diagonal stop 0.0594 | open 0.0800
+reward _held gate: finger sum < 0.0610   |   replay grasp test: finger sum < 0.0540
+
+1. COMMAND: close commanded on 0/127 near-frames; longest consecutive close run anywhere: 0 frames
+   min finger sum near the cube: 0.0682
+2. ORIENTATION: yaw to nearest cube face 0.0-14.7 deg (mean 6.0); 0 = face-on, 45 = corner-on
+3. REWARD: _held fired on 0/127 near-frames; bump 0.054-0.311; fingers_on_cube 0.26-1.37 of a possible 6.00
+
+VERDICT
+  NOT COMMANDING CLOSE. The policy never asks. This is a policy/reward
+  problem, not physics -- closing is simply not the action it prefers.
+
+  cube z moved 0.0014 m across the near-frames (stable, not batted away)
