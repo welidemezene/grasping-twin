@@ -350,10 +350,24 @@ for(let i=0;i<8;i++){
   const k = new THREE.Mesh(new THREE.SphereGeometry(1,18,14), matJoint);
   k.castShadow = true; robot.add(k); knuckles.push(k);
 }
-const fingerL = new THREE.Mesh(new THREE.BoxGeometry(0.016,0.014,0.055), matGrip);
+/* Franka hand geometry, measured against the recordings rather than guessed.
+   The DH chain above ends at the FLANGE, where the hand bolts on. Isaac Sim's
+   ee_frame reports the TCP — the point between the fingertips — and comparing
+   the two across a whole replay gives a constant 0.1034 m, on every frame. A
+   constant means the kinematics are right and only the endpoint was wrong: the
+   fingers used to be drawn 0.031 m past the flange, i.e. 72 mm short, floating
+   with nothing between them and the wrist. Grasps looked like near-misses. */
+const TCP_Z    = 0.1034;   // flange -> fingertip, verified against ee vs base
+const FINGER_L = 0.055;
+const fingerL = new THREE.Mesh(new THREE.BoxGeometry(0.016,0.014,FINGER_L), matGrip);
 const fingerR = fingerL.clone();
 fingerL.castShadow = fingerR.castShadow = true;
 robot.add(fingerL, fingerR);
+
+// the hand body that fills the gap between wrist and fingers
+const hand = new THREE.Mesh(new THREE.BoxGeometry(0.062,0.10,TCP_Z-FINGER_L), matJoint);
+hand.castShadow = true;
+robot.add(hand);
 
 const cube = new THREE.Mesh(
   new THREE.BoxGeometry(0.042,0.042,0.042),
@@ -493,15 +507,19 @@ function drawFrame(f){
     knuckles[s].scale.setScalar(RADII[s]*1.14);
   }
 
-  // fingers ride on the flange frame, opening along its local Y
+  // fingers ride on the flange frame, opening along its local Y. They END at
+  // the TCP (flange + TCP_Z), so their centres sit half a finger back from it.
   const g = Math.max(0, Math.min(0.04, th[7] !== undefined ? th[7] : 0.04));
   [[fingerL,+1],[fingerR,-1]].forEach(([m,sgn])=>{
     m.position.set(0,0,0);
     m.quaternion.setFromRotationMatrix(flange);
     m.position.setFromMatrixPosition(flange);
     m.translateY(sgn*g);
-    m.translateZ(0.031);
+    m.translateZ(TCP_Z - FINGER_L/2);
   });
+  hand.quaternion.setFromRotationMatrix(flange);
+  hand.position.setFromMatrixPosition(flange);
+  hand.translateZ((TCP_Z - FINGER_L)/2);
 
   // With base recorded, cube and gripper are placed by measurement, in the
   // robot's own frame. Without it, fall back to re-centring the cube on the table.
@@ -765,8 +783,11 @@ solve([0,-0.55,0,-2.3,0,1.75,0.78]).pts.forEach((p,i)=>{ if(i<8) knuckles[i].pos
   [[fingerL,+1],[fingerR,-1]].forEach(([m,sgn])=>{
     m.quaternion.setFromRotationMatrix(flange);
     m.position.setFromMatrixPosition(flange);
-    m.translateY(sgn*0.04); m.translateZ(0.031);
+    m.translateY(sgn*0.04); m.translateZ(TCP_Z - FINGER_L/2);
   });
+  hand.quaternion.setFromRotationMatrix(flange);
+  hand.position.setFromMatrixPosition(flange);
+  hand.translateZ((TCP_Z - FINGER_L)/2);
   cube.position.set(TABLE_X, 0, REST_H);
 })();
 </script>
