@@ -1,0 +1,4 @@
+start_from week3/checkpoints/stage10_1996800_steps
+gripper bias 0.0624  log_std -0.503 (kept — stage 10's head knows the cube)
+sticky gripper: decisions held for 5 frames
+ent_coef 0.0100

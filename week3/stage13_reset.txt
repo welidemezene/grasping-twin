@@ -1,0 +1,5 @@
+start_from week3/checkpoints/stage12_final
+stock curriculum disabled: action_rate and joint_vel stay at base weights
+gripper bias 0.1475  log_std -0.076
+sticky gripper: decisions held for 5 frames
+ent_coef 0.0010 (taper step 3: 0.01 -> 0.003 -> 0.001)

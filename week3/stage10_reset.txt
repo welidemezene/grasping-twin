@@ -1,0 +1,6 @@
+gripper bias before 0.1090
+gripper bias after  0.0000
+gripper weight row max abs after 0.000000
+gripper log_std before -0.547
+gripper log_std reset to -0.500 -> close proposed ~half the time
+ent_coef 0.0100 (was 0.0 through stage 9 — exploration can no longer go extinct)
