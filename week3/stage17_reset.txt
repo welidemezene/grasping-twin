@@ -1,0 +1,16 @@
+start_from week3/checkpoints/stage16_final
+STAGE 16 MEASURED: grasped AND airborne 510/512 (99.6%), median lift
+  0.1349 m -- but the cube centre sits 28.4 mm from the fingertips (its
+  own half-width is 21 mm) at a tilt never below 28.6 deg. A corner hook.
+gripper std at load 1.0317
+gripper std floor anneals 0.10 -> 0.05 over 10000000 steps
+ent_coef 0.0020 (stage 15 used 0.003)
+learning_rate 1.0e-04
+CHANGE 1: hold_distance 0.03 -> 0.015 on EVERY term that gates on it.
+  Stage 16's corner pinch sat at 0.0286 -- inside the old gate by 1.4 mm --
+  so a pinch and a real grip paid the same. Now the cube must be IN the hand.
+CHANGE 2: cube_upright weight 4 -> 10. At weight 4 a 40 deg carry cost
+  almost nothing, which is why stage 16 stayed at 40 deg.
+Lifting (12) still outweighs squareness (10): a bad lift must beat no lift.
+sticky gripper: decisions held for 5 frames
+stock curriculum disabled: action_rate and joint_vel stay at base weights
