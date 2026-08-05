@@ -1,0 +1,20 @@
+
+=== RELIABILITY ACROSS 512 PARALLEL ENVIRONMENTS (512 trials, not 1) ===
+  ever grasped:               512 / 512  (100.0%)
+  ever airborne:              512 / 512  (100.0%)
+  GRASPED AND AIRBORNE:       507 / 512  (99.0%)   <- the real success rate
+  lift height while held: median 0.0099 m, max 0.1582 m
+
+--- env 0 detail ---
+checkpoint week3/checkpoints/stage15_final   frames 249
+cube half-edge 0.021; resting flat centre = 0.0210, balanced on a corner = 0.0364
+
+cube z:          min 0.0210  max 0.1680
+lowest corner:   min -0.0001  max 0.1352
+tilt:            min 0.0 deg  max 79.2 deg
+
+frames AIRBORNE (lowest corner > 5 mm):        173
+frames GRASPED  (fingers on cube, gap < 3 cm): 219
+frames GRASPED **AND** AIRBORNE:               170
+
+REAL LIFT: 170 frames with the cube held AND off the table, first at step 54 (corner 0.0069 m up)
