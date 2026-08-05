@@ -1,0 +1,12 @@
+start_from week3/checkpoints/stage13_final
+PROBE FINDING: gripper action mean was +2.0720, never below +1.8585,
+  threshold 0.0, so 0 close commands in 249 frames.
+gripper bias   +0.1476 -> +0.0000
+gripper w-norm  0.5751 -> 0.0000
+gripper std     0.8377 -> 1.0000 (floored at 0.50 for the whole run)
+close was 0.2 sigma away at load; it is now ~0.0 sigma (a coin flip)
+ent_coef 0.0100 (taper 0.01->0.003->0.001 UNDONE; that taper is what let the stage 8/9 gripper reset drift back to always-open)
+learning_rate 1.0e-04 (lowered to protect the solved arm)
+sticky gripper: decisions held for 5 frames
+stock curriculum disabled: action_rate and joint_vel stay at base weights
+reward UNCHANGED from stage 13 -- one variable at a time
