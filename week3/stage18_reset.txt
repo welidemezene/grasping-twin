@@ -1,0 +1,21 @@
+start_from week3/checkpoints/stage16_final
+THE BRACKET: hold_distance 0.03 was too loose (corner pinch at 0.0286
+  passed, cube hung off the fingertips at 31.5 mm). 0.015 was too tight
+  (only 2.3 mm above a real 12.7 mm grip, so the boolean gate flickered
+  and the lift fell 140.9 -> 31.6 mm). This run takes the middle.
+CHANGE 1: hold_distance -> 0.020 on every term that gates on it.
+CHANGE 2: cube_upright weight -> 4.0 (stage 17 used 10.0). At 10 it paid
+  a guaranteed 10 for hovering square at rest vs a gamble for 12 by
+  lifting, so the policy stayed low. Lifting must dominate at rest.
+num_envs 512 -- SAME as stages 16 and 17. n_steps=64 is frozen in the
+  checkpoint, so raising num_envs would halve the gradient updates and
+  make this incomparable to the runs it exists to sit between.
+gripper std at load 1.0317
+ent_coef 0.0020
+learning_rate 1.0e-04
+sticky gripper: decisions held for 5 frames
+stock curriculum disabled: action_rate and joint_vel stay at base weights
+
+SUCCESS = stage 16's lift (median ~0.13 m) with stage 17's grip
+  (cube within ~21 mm of the fingertips). Judge with check_airborne.py
+  over 512 trials plus a replay -- never one replay, never by height.

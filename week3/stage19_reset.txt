@@ -1,0 +1,27 @@
+start_from week3/checkpoints/stage16_final
+THE BRACKET IS REFUTED. Measured over 512 trials each:
+  gate 0.030 -> lift 124.3 mm, tilt 40.2 deg  (stage 16)
+  gate 0.020 -> lift  23.1 mm, tilt 25.2 deg  (stage 18)
+  gate 0.015 -> lift  21.5 mm, tilt 72.7 deg  (stage 17)
+Tightening the gate destroys the lift monotonically; no good middle
+exists. Stage 18 also disproved the cube_upright explanation for stage
+17's collapse -- weight went back to 4 and the lift did NOT return.
+
+ONLY CHANGE: cube_upright weight -> 10.0. hold_distance stays at stage
+  16's 0.03, untouched, because it is the only gate that lifts. The
+  tilt weight has never been tested against it -- stages 17 and 18 both
+  moved it while the gate was tight. This is that missing cell.
+num_envs 512 -- SAME as stages 16, 17 and 18. n_steps=64 is frozen in the
+  checkpoint, so raising num_envs would halve the gradient updates and
+  make this incomparable to the runs it exists to be compared with.
+gripper std at load 1.0317
+ent_coef 0.0020
+learning_rate 1.0e-04
+sticky gripper: decisions held for 5 frames
+stock curriculum disabled: action_rate and joint_vel stay at base weights
+
+SUCCESS = stage 16's lift (median ~0.12 m) with tilt under 30 deg.
+FAILURE = the lift collapses again, which would mean cube_upright at 10
+  is harmful regardless of the gate, and stage 16 is week 3's result.
+Either way week 3 ends here. Judge with check_airborne.py over 512
+  trials plus a replay -- never one replay, never by cube height.
