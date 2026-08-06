@@ -359,7 +359,16 @@ for(let i=0;i<8;i++){
    with nothing between them and the wrist. Grasps looked like near-misses. */
 const TCP_Z    = 0.1034;   // flange -> fingertip, verified against ee vs base
 const FINGER_L = 0.055;
-const fingerL = new THREE.Mesh(new THREE.BoxGeometry(0.016,0.014,FINGER_L), matGrip);
+/* Thickness of a finger along the OPENING axis. This matters more than it
+   looks: panda_finger_joint measures the centreline-to-INNER-FACE distance,
+   i.e. the gripping surface, not the finger's centre. Drawing the box centred
+   on the joint value buries each finger FINGER_T/2 = 7 mm too deep, so a real
+   grasp (finger_sum 0.045 on a 42 mm cube, 1.5 mm clearance per face) rendered
+   as the fingers 5.5 mm INSIDE the cube. That is the "no physics law" the
+   screenshot showed -- a drawing error, not a PhysX one. Offset by half the
+   thickness so the inner face lands on the joint value. */
+const FINGER_T = 0.014;
+const fingerL = new THREE.Mesh(new THREE.BoxGeometry(0.016,FINGER_T,FINGER_L), matGrip);
 const fingerR = fingerL.clone();
 fingerL.castShadow = fingerR.castShadow = true;
 robot.add(fingerL, fingerR);
@@ -519,7 +528,9 @@ function drawFrame(f){
     m.position.set(0,0,0);
     m.quaternion.setFromRotationMatrix(flange);
     m.position.setFromMatrixPosition(flange);
-    m.translateY(sgn*gg);
+    // + FINGER_T/2 so the finger's INNER FACE sits at the joint value, which is
+    // what the joint actually measures. Without it every grasp draws 7 mm deep.
+    m.translateY(sgn*(gg + FINGER_T/2));
     m.translateZ(TCP_Z - FINGER_L/2);
   });
   hand.quaternion.setFromRotationMatrix(flange);
@@ -788,7 +799,7 @@ solve([0,-0.55,0,-2.3,0,1.75,0.78]).pts.forEach((p,i)=>{ if(i<8) knuckles[i].pos
   [[fingerL,+1],[fingerR,-1]].forEach(([m,sgn])=>{
     m.quaternion.setFromRotationMatrix(flange);
     m.position.setFromMatrixPosition(flange);
-    m.translateY(sgn*0.04); m.translateZ(TCP_Z - FINGER_L/2);
+    m.translateY(sgn*(0.04 + FINGER_T/2)); m.translateZ(TCP_Z - FINGER_L/2);
   });
   hand.quaternion.setFromRotationMatrix(flange);
   hand.position.setFromMatrixPosition(flange);
