@@ -57,6 +57,7 @@ class StickyGripper(VecEnvWrapper):
 
 
 NUM_ENVS = int(sys.argv[4]) if len(sys.argv) > 4 else 1
+STEPS = int(sys.argv[5]) if len(sys.argv) > 5 else 250
 env_cfg = FrankaLiftStage1Cfg()
 env_cfg.scene.num_envs = NUM_ENVS
 env_cfg.sim.device = "cuda:0"
@@ -91,7 +92,8 @@ print("PPO loaded OK", flush=True)
 writer = imageio.get_writer(OUT, fps=30, quality=8)
 cube_z, fsum = [], []
 obs = vec.reset()
-for step in range(250):
+episodes = 0
+for step in range(STEPS):
     action, _ = model.predict(obs, deterministic=True)
     obs, reward, done, info = vec.step(action)
     frame = env.render()
@@ -100,8 +102,10 @@ for step in range(250):
     jp = raw.scene["robot"].data.joint_pos[0]
     cube_z.append(float(raw.scene["object"].data.root_pos_w[0, 2]))
     fsum.append(float(jp[7] + jp[8]))
+    # keep filming through episode resets: each reset is a fresh cube + new lift
     if bool(done[0]):
-        break
+        episodes += 1
+print(f"episodes completed (env 0): {episodes}", flush=True)
 writer.close()
 
 print(f"REPLAY DONE: {len(cube_z)} frames -> {OUT}", flush=True)
