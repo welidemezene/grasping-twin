@@ -56,11 +56,19 @@ class StickyGripper(VecEnvWrapper):
         return self.venv.reset()
 
 
+NUM_ENVS = int(sys.argv[4]) if len(sys.argv) > 4 else 1
 env_cfg = FrankaLiftStage1Cfg()
-env_cfg.scene.num_envs = 1
+env_cfg.scene.num_envs = NUM_ENVS
 env_cfg.sim.device = "cuda:0"
-env_cfg.viewer.eye = (1.4, -1.2, 0.9)
-env_cfg.viewer.lookat = (0.45, 0.0, 0.25)
+if NUM_ENVS == 1:
+    env_cfg.viewer.eye = (1.4, -1.2, 0.9)
+    env_cfg.viewer.lookat = (0.45, 0.0, 0.25)
+else:
+    # pulled-back shot over the env grid (spacing ~2.5 m, grid centered at origin)
+    import math
+    half = math.sqrt(NUM_ENVS) * 2.5 / 2
+    env_cfg.viewer.eye = (half * 1.7, -half * 1.7, half * 1.1)
+    env_cfg.viewer.lookat = (0.0, 0.0, 0.3)
 # hide debug visualizations (goal-pose arrows, ee-frame markers) for clean footage
 for _term in ("commands", "scene"):
     pass
