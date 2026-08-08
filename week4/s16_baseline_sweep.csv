@@ -1,0 +1,7 @@
+checkpoint,shift_x,shift_y,shift_mag,grasped,airborne,grasped_and_airborne,trials,success_pct,lift_median_m,tilt_median_deg,pass
+stage16_final,0.0,0.0,0.0,511,512,509,512,99.4,0.1345,45.7,1
+stage16_final,0.024,0.024,0.0339,507,512,491,512,95.9,0.1387,50.7,1
+stage16_final,0.04,0.0,0.04,339,512,214,512,41.8,0.057,38.9,0
+stage16_final,0.0,-0.04,0.04,512,512,510,512,99.6,0.1274,44.5,1
+stage16_final,0.035,0.035,0.0495,327,512,210,512,41.0,0.1318,54.4,0
+stage16_final,0.05,0.05,0.0707,6,512,0,512,0.0,0.0001,0.0,0

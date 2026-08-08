@@ -1,0 +1,66 @@
+=== SHIFT 0.000 m  (x +0.000, y +0.000) — 512 parallel trials ===
+checkpoint ../week3/week3/checkpoints/stage16_final   hold 5
+  ever grasped:            511 / 512  (99.8%)
+  ever airborne:           512 / 512  (100.0%)
+  GRASPED AND AIRBORNE:    509 / 512  (99.4%)   <- the real success rate
+  lift while held:        median 0.1345 m, max 0.1675 m
+  cube tilt while held:   median 45.7 deg
+  GATE (>90% and >0.10 m): PASS
+
+  reference — stage16_final at shift 0.000: 99.6%%, 0.1349 m, ~40 deg
+
+=== SHIFT 0.034 m  (x +0.024, y +0.024) — 512 parallel trials ===
+checkpoint ../week3/week3/checkpoints/stage16_final   hold 5
+  ever grasped:            507 / 512  (99.0%)
+  ever airborne:           512 / 512  (100.0%)
+  GRASPED AND AIRBORNE:    491 / 512  (95.9%)   <- the real success rate
+  lift while held:        median 0.1387 m, max 0.1714 m
+  cube tilt while held:   median 50.7 deg
+  GATE (>90% and >0.10 m): PASS
+
+  reference — stage16_final at shift 0.000: 99.6%%, 0.1349 m, ~40 deg
+
+=== SHIFT 0.040 m  (x +0.040, y +0.000) — 512 parallel trials ===
+checkpoint ../week3/week3/checkpoints/stage16_final   hold 5
+  ever grasped:            339 / 512  (66.2%)
+  ever airborne:           512 / 512  (100.0%)
+  GRASPED AND AIRBORNE:    214 / 512  (41.8%)   <- the real success rate
+  lift while held:        median 0.0570 m, max 0.1216 m
+  cube tilt while held:   median 38.9 deg
+  GATE (>90% and >0.10 m): FAIL
+
+  reference — stage16_final at shift 0.000: 99.6%%, 0.1349 m, ~40 deg
+
+=== SHIFT 0.040 m  (x +0.000, y -0.040) — 512 parallel trials ===
+checkpoint ../week3/week3/checkpoints/stage16_final   hold 5
+  ever grasped:            512 / 512  (100.0%)
+  ever airborne:           512 / 512  (100.0%)
+  GRASPED AND AIRBORNE:    510 / 512  (99.6%)   <- the real success rate
+  lift while held:        median 0.1274 m, max 0.1677 m
+  cube tilt while held:   median 44.5 deg
+  GATE (>90% and >0.10 m): PASS
+
+  reference — stage16_final at shift 0.000: 99.6%%, 0.1349 m, ~40 deg
+
+=== SHIFT 0.049 m  (x +0.035, y +0.035) — 512 parallel trials ===
+checkpoint ../week3/week3/checkpoints/stage16_final   hold 5
+  ever grasped:            327 / 512  (63.9%)
+  ever airborne:           512 / 512  (100.0%)
+  GRASPED AND AIRBORNE:    210 / 512  (41.0%)   <- the real success rate
+  lift while held:        median 0.1318 m, max 0.1691 m
+  cube tilt while held:   median 54.4 deg
+  GATE (>90% and >0.10 m): FAIL
+
+  reference — stage16_final at shift 0.000: 99.6%%, 0.1349 m, ~40 deg
+
+=== SHIFT 0.071 m  (x +0.050, y +0.050) — 512 parallel trials ===
+checkpoint ../week3/week3/checkpoints/stage16_final   hold 5
+  ever grasped:              6 / 512  (1.2%)
+  ever airborne:           512 / 512  (100.0%)
+  GRASPED AND AIRBORNE:      0 / 512  (0.0%)   <- the real success rate
+  lift while held:        median 0.0001 m, max 0.0001 m
+  cube tilt while held:   median 0.0 deg
+  GATE (>90% and >0.10 m): FAIL
+
+  reference — stage16_final at shift 0.000: 99.6%%, 0.1349 m, ~40 deg
+
