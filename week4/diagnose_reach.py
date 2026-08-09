@@ -90,6 +90,15 @@ HALF = 0.021
 AIRBORNE = 0.005
 GRASP_BAND = 0.03      # same gap threshold eval_shift.py calls "at the cube"
 
+# The band above is what eval_shift.py uses to score a grasp, and it is far too
+# loose to judge an APPROACH. The first run of this script proved it: at +x 4 cm
+# the arm gets to 30.4 mm, inside the 30 mm band by a hair, and was reported as
+# "arrives at the cube" -- while the control arrives at 4.6 mm and the working
+# -y case at 9.7 mm. A threshold that cannot separate 4.6 from 30.4 cannot
+# separate a grasp from a miss. ARRIVED is the honest bar: twice the control's
+# approach, still comfortably inside a closable gap.
+ARRIVED = 0.012
+
 
 class StickyGripper(VecEnvWrapper):
     """Identical to eval_shift.py's. Judging a policy in a different action
@@ -215,31 +224,53 @@ at_cube_pct = 100.0 * float(ever_at_cube.float().mean())
 at_ghost_pct = 100.0 * float(ever_at_ghost.float().mean())
 success_pct = 100.0 * float(ever_both.float().mean())
 
-# Verdict. Ordered so the cheapest explanation is tested first, and worded so a
-# genuinely ambiguous run says so instead of picking a side. This decides
-# whether stage 20 is worth 45 minutes -- it should not be able to hedge.
-if at_cube_pct > 90.0 and success_pct < 60.0:
-    verdict = ("DOWNSTREAM — the arm ARRIVES at the cube (%.0f%% of envs reach "
-               "within %.0f mm) and the failure is closure or lift, not "
-               "getting there. Randomizing the spawn is not the fix."
-               % (at_cube_pct, GRASP_BAND * 1000))
-elif md_ghost < md_cube and md_cube > GRASP_BAND:
-    verdict = ("PERCEPTION — the end-effector goes to the OLD spawn point "
-               "(median closest approach to ghost %.4f m vs %.4f m to the real "
-               "cube). The policy is replaying week 3's trajectory and ignoring "
-               "the cube in its observation. Stage 20 is the right fix."
-               % (md_ghost, md_cube))
-elif md_cube < md_ghost and md_cube > GRASP_BAND:
-    verdict = ("REACH — the arm TRACKS the cube (closest approach %.4f m, "
-               "nearer than the ghost's %.4f m) but stalls %.1f mm short of "
-               "the %.0f mm grasp band. Check arm_joints_pinned in the trace: "
-               "if joints sit at their limits this is kinematic and NO amount "
-               "of randomized training fixes it."
-               % (md_cube, md_ghost, (md_cube - GRASP_BAND) * 1000, GRASP_BAND * 1000))
+# COMPENSATION is the real discriminator, and the first run is what taught me
+# that. A policy that ignores the cube leaves the EE at the ghost, so its
+# closest approach to the cube is the full shift: compensation 0. A policy that
+# tracks perfectly approaches as closely as it does at home: compensation 1.
+# Everything interesting in this project lives strictly between those, and a
+# pass/fail band cannot see it. -y 4 cm compensates ~0.88 and grasps; +x 4 cm
+# compensates ~0.25 and misses -- same displacement, same arm, same policy.
+if shift_mag > 1e-6:
+    compensation = max(0.0, min(1.0, (shift_mag - md_cube) / shift_mag))
 else:
-    verdict = ("AMBIGUOUS — closest approach %.4f m to cube, %.4f m to ghost. "
-               "Neither explanation dominates; read the trace CSV before "
-               "committing to a stage." % (md_cube, md_ghost))
+    compensation = float("nan")
+
+pinned_max = max(r["arm_joints_pinned_median"] for r in trace)
+
+# Ordered cheapest-explanation-first. This decides whether stage 20 is worth 45
+# minutes, so it must not be able to hedge.
+if shift_mag < 1e-6:
+    verdict = ("CONTROL — no shift applied. Closest approach %.4f m, success "
+               "%.1f%%. This run exists to calibrate the others, not to have a "
+               "verdict of its own." % (md_cube, success_pct))
+elif md_cube <= ARRIVED and success_pct < 60.0:
+    verdict = ("DOWNSTREAM — the arm genuinely ARRIVES (%.1f mm, comparable to "
+               "the unshifted control) and still fails. The problem is closure "
+               "or the lift, not finding the cube. Randomizing the spawn is NOT "
+               "the fix." % (md_cube * 1000))
+elif pinned_max >= 1.0 and md_cube > ARRIVED:
+    verdict = ("REACH (KINEMATIC) — the arm stalls %.1f mm out with %.0f arm "
+               "joints pinned at their limits. This is workspace, not policy. "
+               "NO amount of randomized training creates reach the kinematics "
+               "do not have." % (md_cube * 1000, pinned_max))
+elif compensation < 0.25:
+    verdict = ("PERCEPTION — the arm compensates for only %.0f%% of the %.1f cm "
+               "shift (approach %.1f mm; ghost %.1f mm). It is replaying week "
+               "3's trajectory and ignoring the cube in its observation. Stage "
+               "20 is the right fix."
+               % (100 * compensation, shift_mag * 100, md_cube * 1000, md_ghost * 1000))
+elif md_cube > ARRIVED:
+    verdict = ("PARTIAL TRACKING — the arm moves toward the cube but only "
+               "%.0f%% of the way (approach %.1f mm vs the ghost's %.1f mm), "
+               "and no joint is pinned (max %.0f), so it is neither blind nor "
+               "out of reach: the learned position->motion gain is too small in "
+               "this direction. Stage 20 supplies exactly that gain."
+               % (100 * compensation, md_cube * 1000, md_ghost * 1000, pinned_max))
+else:
+    verdict = ("HEALTHY — approach %.1f mm (%.0f%% of the shift compensated), "
+               "success %.1f%%. This direction is not the problem."
+               % (md_cube * 1000, 100 * compensation, success_pct))
 
 lines = [
     "=== REACH/PERCEPTION DIAGNOSIS  shift %.3f m (x %+.3f, y %+.3f) — %d trials ===" % (
@@ -249,6 +280,9 @@ lines = [
     "  closest approach to the REAL cube:   median %.4f m" % md_cube,
     "  closest approach to the GHOST spot:  median %.4f m" % md_ghost,
     "     (ghost = where the cube sat for every stage 1-19)",
+    "  shift compensated:                   %5.0f%%   <- 0%% blind, 100%% tracking" % (
+        100 * compensation),
+    "  max arm joints pinned at a limit:    %5.0f     <- nonzero = kinematic" % pinned_max,
     "  envs that ever reached the cube:     %5.1f%%" % at_cube_pct,
     "  envs that ever reached the ghost:    %5.1f%%" % at_ghost_pct,
     "  ever grasped:                        %5.1f%%" % (100.0 * float(ever_grasped.float().mean())),

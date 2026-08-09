@@ -1,0 +1,51 @@
+=== REACH/PERCEPTION DIAGNOSIS  shift 0.000 m (x +0.000, y +0.000) — 512 trials ===
+checkpoint ../week3/week3/checkpoints/stage16_final   hold 5   steps 250
+
+  closest approach to the REAL cube:   median 0.0046 m
+  closest approach to the GHOST spot:  median 0.0046 m
+     (ghost = where the cube sat for every stage 1-19)
+  shift compensated:                     nan%   <- 0% blind, 100% tracking
+  max arm joints pinned at a limit:        0     <- nonzero = kinematic
+  envs that ever reached the cube:     100.0%
+  envs that ever reached the ghost:    100.0%
+  ever grasped:                         99.8%
+  GRASPED AND AIRBORNE:                 99.6%
+
+  VERDICT: CONTROL — no shift applied. Closest approach 0.0046 m, success 99.6%. This run exists to calibrate the others, not to have a verdict of its own.
+
+  compare — s16_baseline_sweep.csv: +x 0.040 = 41.8%, -y 0.040 = 99.6%
+
+=== REACH/PERCEPTION DIAGNOSIS  shift 0.040 m (x +0.000, y -0.040) — 512 trials ===
+checkpoint ../week3/week3/checkpoints/stage16_final   hold 5   steps 250
+
+  closest approach to the REAL cube:   median 0.0099 m
+  closest approach to the GHOST spot:  median 0.0251 m
+     (ghost = where the cube sat for every stage 1-19)
+  shift compensated:                      75%   <- 0% blind, 100% tracking
+  max arm joints pinned at a limit:        0     <- nonzero = kinematic
+  envs that ever reached the cube:     100.0%
+  envs that ever reached the ghost:     99.0%
+  ever grasped:                        100.0%
+  GRASPED AND AIRBORNE:                 98.6%
+
+  VERDICT: HEALTHY — approach 9.9 mm (75% of the shift compensated), success 98.6%. This direction is not the problem.
+
+  compare — s16_baseline_sweep.csv: +x 0.040 = 41.8%, -y 0.040 = 99.6%
+
+=== REACH/PERCEPTION DIAGNOSIS  shift 0.040 m (x +0.040, y +0.000) — 512 trials ===
+checkpoint ../week3/week3/checkpoints/stage16_final   hold 5   steps 250
+
+  closest approach to the REAL cube:   median 0.0211 m
+  closest approach to the GHOST spot:  median 0.0316 m
+     (ghost = where the cube sat for every stage 1-19)
+  shift compensated:                      47%   <- 0% blind, 100% tracking
+  max arm joints pinned at a limit:        0     <- nonzero = kinematic
+  envs that ever reached the cube:      99.6%
+  envs that ever reached the ghost:     25.0%
+  ever grasped:                         62.5%
+  GRASPED AND AIRBORNE:                 38.7%
+
+  VERDICT: PARTIAL TRACKING — the arm moves toward the cube but only 47% of the way (approach 21.1 mm vs the ghost's 31.6 mm), and no joint is pinned (max 0), so it is neither blind nor out of reach: the learned position->motion gain is too small in this direction. Stage 20 supplies exactly that gain.
+
+  compare — s16_baseline_sweep.csv: +x 0.040 = 41.8%, -y 0.040 = 99.6%
+
