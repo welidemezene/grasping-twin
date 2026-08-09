@@ -1,0 +1,22 @@
+start_from ../week3/week3/checkpoints/stage16_final
+WEEK 3 RESULT BEING GENERALIZED (stage16_final, check_airborne.py, 512 trials):
+  grasped 512/512 (100%), grasped AND airborne 510/512 (99.6%),
+  median lift while held 0.1349 m, cube tilt up to ~40 deg.
+  ...and it grasps AIR once the scene moves 3.4 cm. That is what this fixes.
+
+THE ONE CHANGE: cube spawn pose_range x,y = (-0.050, 0.050), was (0,0) for
+  every stage 1-19. object_position_in_robot_root_frame was always in the
+  observation vector; it was simply constant, so it acted as a bias and the
+  policy had no gradient telling it to look. Rewards are stage 16's, exactly.
+
+gripper std at load 1.0317
+gripper std floor 0.050 (a floor only -- it cannot force the std down)
+ent_coef 0.0040 (RAISED from stage 16's 0.002 -- harder task needs exploration)
+learning_rate 1.0e-04 (low: refine the solved arm/grasp, do not overwrite it)
+sticky gripper: decisions held for 5 frames
+stock curriculum still disabled (action_rate, joint_vel at base weights)
+
+SUCCESS TEST: eval_shift.py, at offsets NOT in the training range,
+  including the 3.4 cm diagonal. Gate: >90%% grasped+airborne and >10 cm
+  median lift at every held-out offset. Never from one replay, never from
+  cube height.
