@@ -32,11 +32,20 @@
 # generalization -- that one the sweep already answered, and adding offsets here
 # would be a second variable in a probe that exists to isolate one.
 #
-# Usage:  ./lift_trajectory.sh [out_prefix]
+# Usage:  ./lift_trajectory.sh [out_prefix] [stage]
+# e.g.    ./lift_trajectory.sh s20_traj stage20
+#         ./lift_trajectory.sh s21_traj stage21
+#
+# The stage name is a parameter because week4/checkpoints/ now holds more than
+# one run's series, and the nearest-checkpoint search below matches on the
+# filename prefix. Hardcoding it would silently probe stage 20 while reporting
+# stage 21's name -- the same class of mistake the stage-12 prefix collision
+# caused, one directory further along.
 
 set -u
 
 PREFIX=${1:-s20_traj}
+STAGE=${2:-stage20}
 REPO=/home/$USER/grasping_twin
 IMAGE=grasping-twin-isaaclab:latest
 
@@ -46,14 +55,14 @@ IMAGE=grasping-twin-isaaclab:latest
 # container start to discover it was wrong.
 for TARGET in 2500000 5000000 7500000; do
     CK=$(ls "$REPO"/week4/checkpoints/ \
-         | sed 's/stage20_\([0-9]*\)_steps.zip/\1/' \
+         | sed -n "s/${STAGE}_\([0-9]*\)_steps.zip/\1/p" \
          | grep -E '^[0-9]+$' \
          | awk -v t="$TARGET" 'BEGIN{best=-1;d=1e18}
                                {x=$1-t; if(x<0)x=-x; if(x<d){d=x;best=$1}}
                                END{print best}')
-    echo "=== stage20_${CK}_steps  (target ${TARGET}) ==="
+    echo "=== ${STAGE}_${CK}_steps  (target ${TARGET}) ==="
     docker run --rm --gpus all -v "$REPO":/workspace -w /workspace/week4 "$IMAGE" \
-        eval_shift.py "checkpoints/stage20_${CK}_steps" \
+        eval_shift.py "checkpoints/${STAGE}_${CK}_steps" \
         --out_prefix "$PREFIX" --shift_x 0 --shift_y 0 --hold 5 2>&1 \
         | grep -vE 'Warning|\[Error\]|deprecated' | tail -12
     echo

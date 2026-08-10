@@ -1,0 +1,4 @@
+checkpoint,shift_x,shift_y,shift_mag,grasped,airborne,grasped_and_airborne,trials,success_pct,lift_median_m,tilt_median_deg,pass
+stage21_2595840_steps,0.0,0.0,0.0,501,512,428,512,83.6,0.0617,33.1,0
+stage21_4992000_steps,0.0,0.0,0.0,512,512,510,512,99.6,0.0302,30.8,0
+stage21_7587840_steps,0.0,0.0,0.0,512,512,512,512,100.0,0.0267,27.2,0

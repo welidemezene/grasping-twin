@@ -1,0 +1,29 @@
+start_from ../week3/week3/checkpoints/stage16_final
+  (stage 20's START, not its result -- same origin so the reward term is
+   the only difference between the two runs)
+
+WHAT STAGE 20 SHOWED, and what this run tests:
+  generalization SOLVED   +x 4 cm 41.8%% -> 98.6%%, 5 cm diag 41.0%% -> 99.8%%
+  lift LOST               0.1345 -> 0.0257 m at every offset incl. control
+  traded continuously     2.6M 0.1029/39.4deg -> 10M 0.0257/20.3deg
+  and PAID FOR            ep_rew_mean rose 66 -> 96.5 over that same span
+
+THE ONE CHANGE: cube_upright_in_hand REMOVED (was weight 4.0).
+  It pays for squareness at ANY height; lifting_progress needs height.
+  Once the spawn moves and a lift is a gamble, a square hold just above
+  the table is the guaranteed earner. Week 3's stage 19 already isolated
+  this term (4 -> 10 dropped the lift 124.3 -> 15.3 mm); what is new is
+  that randomizing the spawn makes weight 4 unsurvivable too.
+
+PREDICTION REGISTERED BEFORE THE RUN: tilt WILL regress (stage 15, with
+  no squareness term, tilted to 79 deg). Lift returning at the cost of
+  tilt is a frontier to price, not a failure. What would FALSIFY the
+  explanation is the lift staying near 2.6 cm with the term gone.
+
+spawn range +-0.050 m (stage 20's, unchanged)
+gripper std at load 1.0317
+ent_coef 0.0040, learning_rate 1.0e-04, sticky hold 5 (all stage 20's)
+
+JUDGE WITH BOTH: sweep_shift.sh (six offsets, >90%% and >10 cm) AND
+  lift_trajectory.sh (the shape across checkpoints). Stage 20's final
+  numbers were the least informative thing about it.
