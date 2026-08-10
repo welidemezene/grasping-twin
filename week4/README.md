@@ -114,9 +114,157 @@ Open question for the first diagnostic, before stage 20 burns 45 minutes: is the
 near the cube at +x 4 cm and misses, or never travels there at all. The two have
 different fixes and the sweep cannot tell them apart.
 
+## The diagnostic, 2026-08-09 — neither perception nor kinematics
+
+`diagnose_reach.py` ran three matched 512-trial replays of `stage16_final`,
+tracking per step the end-effector's distance to the **real** cube and to the
+**ghost** (Week 3's fixed spawn point), plus arm-joint saturation.
+
+| run | approach | shift compensated | joints pinned | grasped | success |
+|---|---|---|---|---|---|
+| control | 4.6 mm | — | 0 | 99.8% | 99.6% |
+| −y 4 cm | 9.9 mm | 75% | 0 | 100% | 98.6% |
+| **+x 4 cm** | 21.1 mm | **47%** | 0 | 62.5% | 38.7% |
+
+**Not perception.** The arm moves toward the real cube and away from the ghost —
+only 25% of envs ever visit the ghost, against 99.6% reaching the cube. The
+position channel is not being ignored.
+
+**Not kinematics.** Zero arm joints came within 5% of a limit at any step of any
+run, and +x cubes that *do* get grasped lift 14.0 cm — higher than the control.
+Everything downstream of the grasp is intact.
+
+**Verdict: partial tracking.** An under-powered, directional position→motion
+gain. The arm goes most of the way and stops 21 mm out, which is too far to close
+on. Randomization supplies exactly that gain, so stage 20 was the right run.
+
+Two method notes, both of which cost something to learn:
+
+- The first pass judged "arrived" against `eval_shift.py`'s 30 mm grasp band and
+  reported +x as arriving — while the control arrives at 4.6 mm. **A band that
+  cannot separate 4.6 from 30.4 cannot separate a grasp from a miss.** A pass/fail
+  threshold borrowed from a different question answers the wrong question. It now
+  reports a continuous compensation fraction.
+- **Noise floor, measured:** +x 4 cm scored 41.8 / 41.2 / 38.7 across three
+  identical configs. PhysX is not bit-deterministic. **Differences under ~3
+  percentage points are not results**, anywhere on this page.
+
+## Stage 20 — generalization solved, and the lift paid for it
+
+`stage20_final`, six offsets × 512 trials (`s20_sweep.csv`):
+
+| offset | stage 16 | **stage 20** | median lift |
+|---|---|---|---|
+| control | 99.4% | **100%** | 0.0257 m |
+| 0.034 diagonal | 95.9% | **99.8%** | 0.0268 m |
+| **0.040 +x** | 41.8% | **98.6%** | 0.0306 m |
+| 0.040 −y | 99.6% | **99.6%** | 0.0265 m |
+| **0.050 diagonal** | 41.0% | **99.8%** | 0.0308 m |
+| 0.070 diagonal | 0.0% | **29.1%** | 0.0283 m |
+
+**Directional brittleness is gone.** The under-reaching diagnosis was right and
+randomization supplied the gain. **But the median lift fell 0.1345 → 0.0257 m at
+every offset including the control**, and tilt 40° → 20°. Every row fails the
+gate on lift.
+
+### The reward pays for the collapse
+
+`lift_trajectory.sh` and `knee_sweep.sh` probe existing checkpoints — no
+retraining — at the control offset:
+
+| steps | success | median lift |
+|---|---|---|
+| 2.6M | 74.0% | **0.1029 m** |
+| 3.39M | 94.1% | 0.0778 m |
+| 5.0M | 96.5% | 0.0358 m |
+| 7.6M | 100% | 0.0226 m |
+| 10M | 100% | 0.0257 m |
+
+**Overtrained, not undertrained.** Reliability was bought and lift and tilt paid,
+continuously, across the whole run. And `ep_rew_mean` climbed **66 → 96.5 over
+exactly that span** — reward up while the task got worse. Fifth instance of
+reward hacking in this project, and the first caught by an instrument rather than
+by watching a video.
+
+No checkpoint closes Week 4: the curves cross *below* the gate, and the best joint
+point is 3.39M at 94.1% / 7.8 cm, short by 2.2 cm. One caveat — the 2.6M–3.4M
+region is genuinely unstable (2.99M scores 42.6% / 4.6 cm, worse than both
+neighbours), so "monotonic" is too strong. The direction holds across the run;
+the early trajectory does not.
+
+### What this says about Week 3
+
+`stage16_final` was never the best policy its reward could produce. It was a
+policy *in transit* to this same attractor, and the 10M cutoff happened to land
+somewhere good. Three interventions — a tighter hold gate, a heavier
+`cube_upright`, a randomized spawn — all land on ~100% / ~2 cm / ~20°. The Week 3
+2×2 was not measuring two levers. It was measuring how fast different configs
+slide down one hill.
+
+## Stage 21 — the obvious explanation, tested and falsified
+
+One suspect was named in advance: `cube_upright_in_hand` pays for squareness at
+**any** height while `lifting_progress_in_hand` requires height, so once the
+spawn moves and a lift is a gamble, a square hold just above the table is the
+guaranteed earner. Stage 21 removes that term — weight 4 → **0**, not 2, because
+a half-step leaves both explanations alive — warm-started from `stage16_final`,
+which is stage 20's *start* rather than its result, so one term is the only
+difference between the two runs.
+
+**Both halves of the registered prediction were wrong.**
+
+| | predicted | measured |
+|---|---|---|
+| lift | returns toward 10 cm | **2.7 cm** — unchanged |
+| tilt | regresses toward stage 15's 79° | **19.9°** — slightly better than stage 20 |
+
+The trajectory (`s21_traj_sweep.csv`) is 83.6% / 0.0617 at 2.6M → 99.6% / 0.0302
+at 5.0M → 100% / 0.0267 at 7.6M: the same slide on the same schedule, starting
+*lower* than stage 20 did. That is precisely the falsification condition written
+down before the run.
+
+The tilt result is the more important one. **Deleting the squareness term outright
+left the tilt at ~20°, so that term was not producing the squareness credited to
+it.** The mechanism story carried since Week 3 is disproven on its own terms, and
+stage 19's result — weight 4 → 10 dropping the lift 124.3 → 15.3 mm — is once
+again unexplained.
+
+It also cost generalization: control 83.2%, +x 4 cm **2.9%**, 5 cm diagonal
+**1.4%**, all far outside the noise floor. `stage21_final` is worse than its own
+7.6M checkpoint (83.2% vs 100%), so the run destabilized late — judge stage 21 by
+the trajectory, not the final.
+
+**Stage 20 remains Week 4's result, strictly better on every axis.**
+
+## Where Week 4 lands
+
+**The finding:** domain randomization converts an open-loop replay into a
+closed-loop grasp — +x 4 cm from 41.8% to 98.6% — and the lift is the price. That
+price is *not* attributable to the squareness term, because that was the obvious
+explanation and it was tested and eliminated.
+
+**The gate is not met.** Stage 20 gives ~100% success at 2.6 cm; the gate wanted
+>90% *and* >10 cm. The honest frontier point is stage 20's 3.39M checkpoint at
+94.1% / 7.8 cm.
+
+**The next suspect, untested:** `_held` is a **boolean** multiplying five reward
+terms at once. A fast, high lift shifts the cube between the fingers, trips the
+gate, and the wanted behaviour switches its own reward off. Three separate
+single-term interventions have now landed on ~100% / ~2 cm / ~20°, which points
+at the gating *structure* rather than any one weight.
+
+**Why this mattered for hardware.** `stage16_final` grasped 512/512 without ever
+attending to the cube's position — a policy that would have closed on air in
+front of a real camera, every time. Stage 20 is the first policy in this project
+that reads its sensor. That, not the 13.5 cm lift, is the part that transfers.
+
 ## Files
 
 - `stage20_cfg.py` — randomized spawn (training) and fixed-offset (eval) configs
 - `train_stage20.py` — warm start from `stage16_final`, one variable changed
 - `eval_shift.py` — 512-trial corner-geometry verdict at one fixed offset
 - `sweep_shift.sh` — runs the offset table, one container each
+- `diagnose_reach.py` / `run_diagnose.sh` — real-cube vs ghost tracking, joint saturation
+- `lift_trajectory.sh` — lift across checkpoints; takes `[out_prefix] [stage]`
+- `knee_sweep.sh` — finer resolution on the 2.6M–5M region
+- `stage21_cfg.py` / `train_stage21.py` — the falsified single-term hypothesis
