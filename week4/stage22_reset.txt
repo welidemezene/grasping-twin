@@ -1,0 +1,50 @@
+start_from checkpoints/stage20_final
+  (stage 20's RESULT, not its start -- generalization is the thing being
+   kept, and stage 20 is the only policy that has it)
+
+WHAT IS ALREADY RULED OUT, and why this run is what is left:
+  stage 21   cube_upright REMOVED -> lift 2.7 cm, tilt 19.9 deg.
+             Both halves of the prediction failed; the term was not the price.
+  knee probe 3.39M scores 94.1%%/7.8 cm at CONTROL but 28.9%% at +x 4 cm,
+             and lifts 1 mm there. 3.79M scores 4.7%%. No checkpoint in
+             stage 20 holds the lift and the generalization at once.
+
+THE ONE CHANGE: _held stops being a boolean.
+  near    = sigmoid((0.030 - d) / 0.004)
+  stopped = sigmoid((bump - 0.5) / 0.08)
+  held    = near * stopped, in [0,1], multiplying the same five terms.
+
+GATE AGREEMENT CHECK (tight widths: the definition of held is unchanged,
+only the cliff at its boundary is removed):
+  clearly held   d=15mm bump=0.90    smooth 0.970   boolean 1
+  at the cliff   d=30mm bump=0.50    smooth 0.250   boolean 0
+  just outside   d=31mm bump=0.48    smooth 0.192   boolean 0
+  clearly not    d=45mm bump=0.20    smooth 0.001   boolean 0
+
+WHY THE BOOLEAN AND NOT SOMETHING ELSE: it is the only candidate that
+  explains why RANDOMIZING THE SPAWN triggers the loss at every offset,
+  the unshifted control included. A fixed spawn makes every grasp nearly
+  identical and the flag stable; a varied grip makes it flicker, and it
+  flickers hardest under upward acceleration. Five channels zeroing
+  together makes a low still hold the only way to keep them all on.
+
+PREDICTIONS REGISTERED BEFORE THE RUN:
+  1. The lift trajectory STOPS DECAYING. A lift that merely falls more
+     slowly than stage 20's confirms nothing -- judge the shape, not the
+     final number.
+  2. Tilt rises somewhat. Partial credit for a disturbed grip is exactly
+     what this change pays for.
+  3. FALSIFIED IF the lift still decays to ~2-3 cm. Three explanations
+     would then have failed -- the squareness weight, the gate structure,
+     checkpoint selection -- and the trade should be called intrinsic to
+     this reward family under a randomized spawn. Ship stage 20 and stop.
+
+NO hysteresis, deliberately: it needs per-env state across steps and would
+  be a second variable. It goes on top of this only if this works.
+
+spawn range +-0.050 m (stage 20's, unchanged)
+gripper std at load 1.0306
+ent_coef 0.0040, learning_rate 1.0e-04, sticky hold 5 (all stage 20's)
+
+JUDGE WITH BOTH: sweep_shift.sh (six offsets, >90%% and >10 cm) AND
+  lift_trajectory.sh s22_traj stage22 (the shape across checkpoints).
