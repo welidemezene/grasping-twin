@@ -1,0 +1,14 @@
+SMOOTHNESS PROBE -- s16
+  checkpoint ../week3/week3/checkpoints/stage16_final
+  512 envs x 250 steps, deterministic (no sampling: what shakes is the policy
+  reacting to observations, not exploration noise)
+
+  arm action delta per step   median 0.1211   p95 0.5510   max 2.5934
+  gripper action delta        median 0.1131   p95 0.6962
+  arm joint speed (rad/s)     median 0.3750   p95 1.5116   max 4.7284
+  direction reversals per arm channel per step   0.701
+
+  Action channels are in [-1, 1], so an arm delta of 0.05 is a 2.5%% swing of
+  the full command range EVERY control step. A reversal rate near 0.5 means
+  a channel changes direction on about half of all steps, which is shake
+  rather than motion.
