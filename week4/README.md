@@ -357,6 +357,52 @@ chronic and applies to every policy here. Worth noting that DWELL is the shakies
 phase in *both* policies: the arm is least stable exactly while it is trying to
 close on a cube.
 
+## The footage — and a near-miss with a 9-trial anecdote
+
+Neither existing video shows the week 4 finding. `stage22_grid25.mp4` uses the
+randomized spawn: ±5 cm on a 4.2 cm cube across 25 arms is about two cube-widths
+in a wide shot, so a viewer cannot see the displacement — and every arm succeeds,
+so there is no failure in frame to compare against. The result that matters,
+41.0% versus 93.2%, is measured with **all 512 envs at the same fixed offset**,
+which is exactly what a randomized render never shows.
+
+`replay_shifted.py` films `FrankaLiftShiftedCfg` instead: every environment at
+one fixed shift, the way the sweep measures. The 5 cm diagonal was chosen from
+the sweep rows, not for looks — the 7 cm diagonal is stage 16's most dramatic
+number (0 of 512) but stage 22 fails 37% of the time there too, so both policies
+would be dropping cubes on screen.
+
+**The first render was 9 envs and it nearly produced a false result.** Stage 16
+came back 7/9 — 78%, against its recorded 41.0%. Taken at face value that would
+have said the sweep was wrong, or made a clip where both arms mostly succeed
+look like a demonstration. Checked instead of published:
+
+| | stage 16 |
+|---|---|
+| recorded sweep, 512 | 41.0% |
+| re-run `eval_shift.py`, 512 | 35.7% |
+| re-run `eval_shift.py`, 9 | 33.3%, then 22.2% |
+| render, 64 envs | **42.2%** |
+| render, 9 envs | 78% ← the anecdote |
+
+**The render script was right and nine trials was the problem.** At 64 envs it
+reproduces the sweep to about a point. The 9-env run was a ~2% draw from a 41%
+distribution, which is precisely what the project's standing rule exists to
+catch: never declare a result from a small sample. Same rule that retracted week
+3 the first time.
+
+The shipped pair is 25 envs each, same offset, same seed:
+
+| | on screen | 512-trial sweep |
+|---|---|---|
+| `shift50_s16_grid25.mp4` | 11/25 lifted | 41.0% |
+| `shift50_s22_grid25.mp4` | **21/25 lifted** | 93.2% |
+
+Fourteen of twenty-five arms fail in the stage 16 clip; four fail in stage 22's.
+The on-screen counts are printed by the render itself and stated here because 25
+trials cannot restate a 512-trial number — the sweeps remain the evidence and the
+video is the illustration.
+
 ## Where Week 4 lands
 
 **The finding:** domain randomization converts an open-loop replay into a
@@ -403,4 +449,5 @@ not the 14 cm, is the part that transfers.
 - `replay_stage22.py` — films under `FrankaLiftStage20Cfg`, so every env draws its own cube
 - `probe_smoothness.py` — how hard the arm shakes, one number per policy
 - `probe_phases.py` / `run_phases.sh` — where the time goes and where the shake lives
-- `media/` — `stage22_hero.mp4`, and `stage22_grid25.mp4` / `stage20_grid25.mp4` at the same seed, therefore the same 25 cube positions
+- `replay_shifted.py` — films one fixed offset across all envs, the way the sweep measures
+- `media/` — `shift50_s16_grid25.mp4` / `shift50_s22_grid25.mp4`, the same 5 cm diagonal for both policies; plus `stage22_hero.mp4` and the randomized-spawn grids
