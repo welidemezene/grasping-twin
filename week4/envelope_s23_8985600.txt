@@ -1,0 +1,40 @@
+ENVELOPE PROBE -- s23_8985600
+  checkpoint checkpoints/stage23_8985600_steps
+  512 envs, spawn uniform in +-0.150 m (training was +-0.050), first episode only
+
+  overall lifted: 94 / 512  (18.4%)
+
+  SUCCESS %% BY SPAWN POSITION   (rows = y, +y at top; cols = x, +x at right)
+  '.' = no samples in that bin
+
+         -0.129 -0.086 -0.043  0.000  0.043  0.086  0.129
+  +0.129      0%     0%     0%     0%    18%    14%     9%
+  +0.086      0%     0%     0%     0%    12%    50%    17%
+  +0.043      0%     0%     0%     0%    40%    80%    40%
+  +0.000      0%     0%     0%     0%    29%    88%    17%
+  -0.043      0%     0%     0%     0%    80%    67%    33%
+  -0.086      0%     0%     0%    15%    83%    50%    21%
+  -0.129      0%     0%     0%    43%    27%    25%    10%
+
+  SAMPLES PER BIN (a bin with under ~5 samples says almost nothing)
+
+         -0.129 -0.086 -0.043  0.000  0.043  0.086  0.129
+  +0.129       9     15     11      7     11     14     11
+  +0.086      11      9     12      8      8     10      6
+  +0.043      12     11      8      8     10     10     10
+  +0.000      11     14      8      8      7     17     12
+  -0.043      12     10     15     16      5     15      9
+  -0.086      12      7      5     13     12     10     14
+  -0.129      11      9      9      7     11     12     10
+
+  arm joints pinned at a limit, mean per env:
+     on successes 1.12     on failures 0.75
+
+  VERDICT: POLICY WALL, not kinematics. Failures happen with joints well
+  inside their limits (0.75 pinned on average), so the arm CAN reach where
+  it is failing. That is a training-distribution problem, and widening the
+  spawn box is the one-variable change that addresses it.
+
+  NOT a substitute for sweep_shift.sh: this spreads 512 trials over the whole
+  box, so a bin holds tens of samples. It says where to aim. The verdict on
+  any specific offset still comes from a 512-trial run at that offset.

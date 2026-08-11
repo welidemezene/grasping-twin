@@ -1,0 +1,40 @@
+start_from checkpoints/stage22_final
+  (the only policy holding generalization AND the lift; this run asks
+   whether the ENVELOPE can widen on top of them)
+
+THE ONE CHANGE: spawn box +-0.050 -> +-0.120 m.
+  Smooth hold gate, every reward weight, the 0.030 hold distance,
+  ent_coef, learning rate and sticky hold are all stage 22's.
+
+WHY, from probe_envelope.py on stage22_final over a +-0.15 box:
+  overall 186/512 lifted (36.3%%)
+  the working region is a BAND -- full +-13 cm in y at centre x, and
+  zero past |x| ~ 0.06 in BOTH directions, near and far alike.
+  arm joints pinned on failures 0.01, same as on successes.
+  => the arm CAN reach where it fails. Policy wall, not kinematic,
+     so more examples is the intervention that fits.
+
+PREDICTIONS REGISTERED BEFORE THE RUN:
+  1. The x band WIDENS toward +-0.12. If it does not move, widening the
+     distribution is not sufficient and the x gain needs another
+     mechanism than more examples.
+  2. The lift DROPS again, at least early -- a varied grip flickers the
+     hold gate, which is what cost 13.5 -> 2.6 cm at +-5 cm.
+  3. It RECOVERS by the end if the smooth gate is the real mechanism,
+     as it did in stage 22 (0.032 -> 0.030 -> 0.066 -> 0.144). Judge the
+     SHAPE across checkpoints, not the final number.
+  4. FALSIFIED IF the lift decays and stays down while the band widens.
+     The smooth gate would then hold only at +-5 cm, and the honest
+     statement is that this reward family trades lift for envelope at a
+     fixed rate. Ship stage 22 and stop widening.
+  5. Y MUST NOT REGRESS. It already works to +-13 cm. If y worsens while
+     x improves, capacity is binding, not the distribution.
+
+gripper std at load 1.0673
+ent_coef 0.0040, learning_rate 1.0e-04, sticky hold 5 (all stage 22's)
+
+JUDGE WITH, in this order:
+  1. probe_envelope.py checkpoints/stage23_final s23_wide --range 0.15
+     <- PRIMARY. Same instrument and box as the map above.
+  2. sweep_shift.sh checkpoints/stage23_final s23
+  3. lift_trajectory.sh s23_traj stage23

@@ -212,19 +212,48 @@ lines += [
     "     on successes %.2f     on failures %.2f" % (pin_ok, pin_fail),
     "",
 ]
-if pin_fail >= 1.0:
+# GRADED, not a binary at 1.0. The first version printed "joints well inside
+# their limits" for anything under 1.0, and then printed exactly that sentence
+# for stage 23 at 0.82 -- where nearly one joint per env sits at a limit. A
+# threshold borrowed from a clean case describes the ambiguous case wrongly, the
+# same failure as the 30 mm grasp band that could not separate a 4.6 mm approach
+# from a 30.4 mm miss. What matters is the CONTRAST between failures and
+# successes, not the absolute number: if failures are pinned and successes are
+# not, the limits are implicated; if both are pinned equally, saturation is a
+# property of the posture rather than the cause of the failure.
+excess = pin_fail - pin_ok
+if pin_fail >= 1.0 and excess >= 0.3:
     lines += [
-        "  VERDICT: KINEMATIC WALL. Failures sit with joints at their limits, so",
-        "  the far cube is outside what this mounting can reach. Retraining cannot",
-        "  buy it -- move the robot, shrink the table, or accept the bound.",
+        "  VERDICT: KINEMATIC WALL. Failures sit with joints at their limits",
+        "  (%.2f) and successes do not (%.2f), so the far cube is outside what this"
+        % (pin_fail, pin_ok),
+        "  mounting can reach. Retraining cannot buy it -- move the robot, shrink",
+        "  the table, or accept the bound.",
     ]
-else:
+elif pin_fail < 0.25:
     lines += [
         "  VERDICT: POLICY WALL, not kinematics. Failures happen with joints well",
         "  inside their limits (%.2f pinned on average), so the arm CAN reach where"
         % pin_fail,
         "  it is failing. That is a training-distribution problem, and widening the",
         "  spawn box is the one-variable change that addresses it.",
+    ]
+elif excess >= 0.3:
+    lines += [
+        "  VERDICT: MIXED, leaning kinematic. Failures carry %.2f pinned joints"
+        % pin_fail,
+        "  against %.2f on successes. The gap is real but under one whole joint, so"
+        % pin_ok,
+        "  treat reach as a CONTRIBUTING constraint, not the whole story. Check",
+        "  WHICH joint saturates before assuming more training fixes it.",
+    ]
+else:
+    lines += [
+        "  VERDICT: AMBIGUOUS. Failures carry %.2f pinned joints and successes %.2f"
+        % (pin_fail, pin_ok),
+        "  -- saturation this similar on both sides is a property of the posture",
+        "  this policy adopts, not an explanation of why it fails. It neither",
+        "  supports nor rules out a reach limit. Do not read a wall type from it.",
     ]
 lines += [
     "",
