@@ -403,6 +403,45 @@ The on-screen counts are printed by the render itself and stated here because 25
 trials cannot restate a 512-trial number — the sweeps remain the evidence and the
 video is the illustration.
 
+### The solo cut — one arm, seven cube positions, 60 seconds
+
+The two grid videos fail as public artefacts for opposite reasons. The
+randomized grid hides the displacement (25 arms, wide frame, two cube-widths of
+motion). The fixed-offset pair shows the failure honestly but compares two
+policies at *one* offset — it proves the point to someone reading the sweep, and
+shows nothing about handling variety.
+
+A solo close-up inverts the ratio: the camera is on one arm, so ±5 cm is a large
+fraction of the frame. `replay_solo_random.py` films one environment through
+seven consecutive episodes, **straight through the resets** as week 3's 42-second
+cut was. The reset is visible on purpose — the viewer watches the cube jump to a
+new place and the same arm go get it. Hiding it would make the clip look edited,
+which is the exact suspicion the footage exists to answer.
+
+```
+ ep   spawn x    spawn y   grasped  lifted
+  1   +0.4899   +0.0017      yes      yes
+  2   +0.5089   +0.0324      yes      yes
+  3   +0.4604   +0.0405      yes      yes
+  4   +0.4923   -0.0269      NO       NO
+  5   +0.5101   +0.0065      yes      yes
+  6   +0.5248   +0.0498      yes      yes
+  7   +0.4986   +0.0243      yes      yes
+
+ 7 episodes, 6 lifted
+ spawn spread: x 6.4 cm, y 7.7 cm   (the cube is 4.2 cm wide)
+```
+
+The spread is larger than the cube itself in both axes, which is what makes the
+shot legible where the grid was not. **Episode 4 fails and stays in the cut** —
+the sweep says 93.2% at a 5 cm diagonal, so a clip with no failure in it would
+be less honest than the number it illustrates, not more impressive.
+
+`stage22_solo_random_episodes.txt` records the table, so a caption can be written
+from measurements rather than from watching. A handful of episodes cannot restate
+`s22_sweep.csv`'s 512 trials; the video is the illustration and the sweep is the
+evidence.
+
 ## Where Week 4 lands
 
 **The finding:** domain randomization converts an open-loop replay into a
@@ -450,4 +489,5 @@ not the 14 cm, is the part that transfers.
 - `probe_smoothness.py` — how hard the arm shakes, one number per policy
 - `probe_phases.py` / `run_phases.sh` — where the time goes and where the shake lives
 - `replay_shifted.py` — films one fixed offset across all envs, the way the sweep measures
+- `replay_solo_random.py` — one arm through consecutive random-spawn episodes; logs each episode's spawn and outcome
 - `media/` — `shift50_s16_grid25.mp4` / `shift50_s22_grid25.mp4`, the same 5 cm diagonal for both policies; plus `stage22_hero.mp4` and the randomized-spawn grids
