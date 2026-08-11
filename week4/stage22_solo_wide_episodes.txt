@@ -1,0 +1,21 @@
+SOLO RANDOM-SPAWN CUT -- C:\Users\default.LAPTOP-OBNFH8RI\grasping_twin\week4\checkpoints\stage22_final.zip
+  C:\isaac\stage22_solo_wide.mp4, 2400 frames at 30 fps = 80.0 s
+  one arm, spawn randomized +-0.120 m, filmed through the resets
+
+  ep   spawn x    spawn y   grasped  lifted   frames
+   1   +0.4758   +0.0040      yes      yes      250
+   2   +0.5215   +0.0778      yes      yes      250
+   3   +0.4049   +0.0972      NO       NO       250
+   4   +0.4814   -0.0645      yes      yes      250
+   5   +0.5243   +0.0157      yes      yes      250
+   6   +0.5595   +0.1194      yes      yes      250
+   7   +0.4967   +0.0583      yes      yes      250
+   8   +0.3890   +0.0159      NO       NO       250
+   9   +0.5135   +0.0223      yes      yes      250
+
+  9 complete episodes, 7 lifted
+  spawn spread: x 0.3890..0.5595 (17.0 cm)   y -0.0645..0.1194 (18.4 cm)
+  cube is 4.2 cm wide -- compare the spread to that when judging the shot
+
+  Illustration, not evidence: a handful of episodes cannot restate
+  s22_sweep.csv's 512 trials. Caption from this table, not from the video.

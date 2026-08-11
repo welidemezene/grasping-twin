@@ -66,6 +66,11 @@ OUT = sys.argv[2] if len(sys.argv) > 2 else r"C:\isaac\stage22_solo_random.mp4"
 HOLD = int(sys.argv[3]) if len(sys.argv) > 3 else 5
 STEPS = int(sys.argv[4]) if len(sys.argv) > 4 else 1800
 SEED = int(sys.argv[5]) if len(sys.argv) > 5 else 0
+# Spawn half-width. Defaults to the stage 20/22 training box; pass 0.12 to film
+# a stage 23 checkpoint over the box IT was trained on. Filming a policy outside
+# its own training distribution would show failures that say nothing about the
+# policy and everything about the config the render chose.
+RANGE = float(sys.argv[6]) if len(sys.argv) > 6 else SPAWN_RANGE
 
 HALF = 0.0210        # cube half-width, as eval_shift.py
 AIRBORNE = 0.005
@@ -105,6 +110,11 @@ class StickyGripper(VecEnvWrapper):
 
 env_cfg = FrankaLiftStage20Cfg()
 env_cfg.scene.num_envs = 1
+env_cfg.events.reset_object_position.params["pose_range"] = {
+    "x": (-RANGE, RANGE),
+    "y": (-RANGE, RANGE),
+    "z": (0.0, 0.0),
+}
 env_cfg.sim.device = "cuda:0"
 env_cfg.seed = SEED
 
@@ -130,7 +140,7 @@ vec = StickyGripper(Sb3VecEnvWrapper(env), hold=HOLD)
 
 model = PPO.load(CKPT, env=vec)
 print("PPO loaded OK: %s" % CKPT, flush=True)
-print("spawn range +-%.3f m, one arm, filmed through the resets" % SPAWN_RANGE, flush=True)
+print("spawn range +-%.3f m, one arm, filmed through the resets" % RANGE, flush=True)
 
 writer = imageio.get_writer(OUT, fps=30, quality=8)
 obs = vec.reset()
@@ -186,7 +196,7 @@ lifted = sum(1 for e in episodes if e[3])
 lines = [
     "SOLO RANDOM-SPAWN CUT -- %s" % CKPT,
     "  %s, %d frames at 30 fps = %.1f s" % (OUT, STEPS, STEPS / 30.0),
-    "  one arm, spawn randomized +-%.3f m, filmed through the resets" % SPAWN_RANGE,
+    "  one arm, spawn randomized +-%.3f m, filmed through the resets" % RANGE,
     "",
     "  ep   spawn x    spawn y   grasped  lifted   frames",
 ]
