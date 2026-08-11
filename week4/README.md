@@ -236,27 +236,158 @@ the trajectory, not the final.
 
 **Stage 20 remains Week 4's result, strictly better on every axis.**
 
+## Stage 22 — the gate was a cliff, and the lift came back over it
+
+Stage 21 eliminated the single-term explanation, which left the one written down
+above as the next suspect: `_held` is a **boolean** multiplying five reward terms
+at once. Stage 22 changes exactly that and nothing else.
+
+```
+near    = sigmoid((0.030 - d) / 0.004)
+stopped = sigmoid((bump - 0.5) / 0.08)
+_held   = near * stopped            # was: (d < 0.030) & (bump > 0.5)
+```
+
+The widths are deliberately tight. The load report checks smooth against boolean
+on the same states: clearly held reads 0.970 versus 1, clearly not held reads
+0.001 versus 0. **So the gate's definition is unchanged to about 2 mm — only the
+cliff is gone.** Warm start is `stage20_final`, because generalization was the
+thing worth keeping.
+
+**Both registered predictions were confirmed — the first confirmed hypothesis in
+this project after two falsified ones.**
+
+**The lift trajectory reversed.** Stage 20 fell 0.1029 → 0.0257 over this span;
+stage 22 climbs: 2.6M 0.0320 → 5.0M 0.0297 → 7.6M 0.0658 → final **0.1440 m**.
+
+**Tilt rose 20.3° → 64.8–80.9°**, exactly as predicted. That is the price, and it
+is worse than stage 16's 40°.
+
+| offset | success | lift | gate |
+|---|---|---|---|
+| control | 99.8% | 0.144 | PASS |
+| 3.4 cm diagonal | 99.0% | 0.139 | PASS |
+| **+x 4 cm** | **87.7%** | 0.147 | FAIL |
+| −y 4 cm | 100% | 0.153 | PASS |
+| 5 cm diagonal | 93.2% | 0.126 | PASS |
+| 7 cm diagonal | 62.7% | 0.120 | FAIL |
+
+**Four of six rows pass >90% and >10 cm.** +x at 87.7% is 2.3 pp under the bar,
+which is **inside the ~3 pp noise floor measured on 2026-08-09** — unresolved, not
+failed, and it needs a repeat rather than an explanation.
+
+**Why this survived when `cube_upright` didn't.** It explains the fact stage 21
+could not: that randomizing the spawn costs the lift at *every* offset, including
+the unshifted control the policy handles perfectly. A fixed spawn makes every
+grasp nearly identical, so the boolean flag is stable. A varied grip makes it
+flicker, and it flickers hardest under upward acceleration — so a low, still hold
+is the only way to keep all five channels switched on.
+
+## Smoothness — the arm shakes, and it always has
+
+The vibration is visible in the stage 22 footage, so it got measured rather than
+argued about. `probe_smoothness.py`, 512 envs × 250 steps, deterministic replay.
+
+| | arm delta/step | reversals/step | joint speed |
+|---|---|---|---|
+| stage 16 | 0.1211 | 0.701 | 0.3750 |
+| stage 20 | 0.1669 | 0.502 | 0.5432 |
+| **stage 22** | **0.2759** | **0.777** | 0.5114 |
+
+Action channels are in [−1, 1], so stage 22 swings **13.8% of the full command
+range every control step**, and each arm channel reverses direction on 78% of
+steps. That is oscillation, not travel.
+
+**Not exploration noise** — replays run `deterministic=True`, so nothing is
+sampled. What shakes is the policy reacting to observations.
+
+**The cause is that nothing pays for smoothness.** `curriculum_lift_cfg.py` kills
+the stock curriculum because it escalates `action_rate` and `joint_vel` from
+−1e-4 to −1e-1 at ~5.1M steps, which collapsed stages 10 and 11 and froze every
+long run. Killing it left both terms at −1e-4 — **four orders of magnitude under
+task rewards that run 2 to 12.** The penalty has existed in name only since stage
+12. Every policy in this project is shaky; the video only made it visible.
+
+**Instrument bug found and fixed mid-probe**: reversals were accumulated into a
+numpy **bool** array, and `+` on bools is a logical OR, so the counter saturated
+at True and reported 0.004 for every policy regardless of the motion. Cast to
+int64. The tell was a metric returning the same number for three visibly
+different behaviours.
+
+## Phases — where the time goes, and where the shake lives
+
+The episode-wide median above cannot see what the footage suggests: that the hand
+arrives, hesitates, and re-grips before lifting. `probe_phases.py` cuts each
+episode into APPROACH / DWELL / LIFT_LAG / CARRY, reusing `eval_shift.py`'s grasp
+and airborne definitions verbatim so the numbers stay comparable to the sweeps.
+First episode only — a mid-run reset costs the "ever" flags nothing but destroys
+a phase clock.
+
+| | stage 16 | stage 22 |
+|---|---|---|
+| reached the cube | 434/512 | **497/512** |
+| grasped | 404/512 | **486/512** |
+| grasped and lifted | 373/512 | **475/512** |
+| APPROACH steps | 24 | 25 |
+| **DWELL** arrival → grasp | **11** | **11** |
+| **LIFT_LAG** grasp → airborne | **7** | **2** |
+| clean single grasp | 90.6% (max 10) | **99.4%** (max 2) |
+| arm delta, approach | 0.1390 | 0.1957 |
+| arm delta, dwell | 0.2403 | 0.3272 |
+| arm delta, carry | 0.1356 | **0.2772** |
+
+**The hesitation is real and chronic, not stage 22's doing.** The hand sits at
+the cube for 11 steps before the grasp condition fires — *identically* in both
+policies. Nothing has ever paid to shorten it.
+
+**The pause before the lift got better, not worse**: 7 steps → **2**, max 25 → 6.
+That is the smooth gate doing precisely its job. The boolean punished committing
+to a lift, so the policy waited; without the cliff it goes.
+
+**Re-gripping is stage 16's problem.** It drops and recatches up to ten separate
+times in one episode, with only 90.6% of envs managing a single clean grasp.
+Stage 22 is at 99.4%.
+
+**The shake is uniform, not concentrated at the grab.** Stage 22 is worse in
+every phase — 1.41× approach, 1.36× dwell, and **2.04× on the carry**, the worst
+ratio of the three. So the hypothesis that the smooth gate pays for
+micro-correction *at the grab specifically* is **falsified**: the excess is not
+where that mechanism would put it. It belongs to the −1e-4 penalty, which is
+chronic and applies to every policy here. Worth noting that DWELL is the shakiest
+phase in *both* policies: the arm is least stable exactly while it is trying to
+close on a cube.
+
 ## Where Week 4 lands
 
 **The finding:** domain randomization converts an open-loop replay into a
 closed-loop grasp — +x 4 cm from 41.8% to 98.6% — and the lift is the price. That
-price is *not* attributable to the squareness term, because that was the obvious
-explanation and it was tested and eliminated.
+price is *not* the squareness term, because that was the obvious explanation and
+stage 21 tested and eliminated it. It is the **boolean hold gate**, and stage 22
+recovers the lift by making that gate smooth while leaving its definition intact
+to ~2 mm.
 
-**The gate is not met.** Stage 20 gives ~100% success at 2.6 cm; the gate wanted
->90% *and* >10 cm. The honest frontier point is stage 20's 3.39M checkpoint at
-94.1% / 7.8 cm.
+**The gate is met on four of six offsets.** `stage22_final` holds ~14 cm at
+99–100% out to a 5 cm diagonal. The two failures are +x 4 cm at 87.7%, inside the
+noise floor and unresolved, and the 7 cm diagonal at 62.7% — where stage 16
+scored 0.0%.
 
-**The next suspect, untested:** `_held` is a **boolean** multiplying five reward
-terms at once. A fast, high lift shifts the cube between the fingers, trips the
-gate, and the wanted behaviour switches its own reward off. Three separate
-single-term interventions have now landed on ~100% / ~2 cm / ~20°, which points
-at the gating *structure* rather than any one weight.
+**Week 4's result is `stage22_final`**, superseding `stage20_final`.
+
+**What it cost:** tilt at 65–81°, worse than any policy in the project, and a
+carry that shakes twice as hard as stage 16's. Both are measured, neither is
+fixed. `cube_upright` is the term for the tilt, and stage 21 showed that removing
+it changes little — so the tilt is not currently explained.
+
+**Carried forward, not fixed:** the smoothness penalty at −1e-4. The fix is cheap
+and obvious, but these weights transfer to nothing — the SO-101 is a different
+body — and shake matters far more on real hardware than in a simulator that never
+wears out. It is a week 5 problem, deliberately.
 
 **Why this mattered for hardware.** `stage16_final` grasped 512/512 without ever
 attending to the cube's position — a policy that would have closed on air in
 front of a real camera, every time. Stage 20 is the first policy in this project
-that reads its sensor. That, not the 13.5 cm lift, is the part that transfers.
+that reads its sensor, and stage 22 keeps that while getting the lift back. That,
+not the 14 cm, is the part that transfers.
 
 ## Files
 
@@ -268,3 +399,8 @@ that reads its sensor. That, not the 13.5 cm lift, is the part that transfers.
 - `lift_trajectory.sh` — lift across checkpoints; takes `[out_prefix] [stage]`
 - `knee_sweep.sh` — finer resolution on the 2.6M–5M region
 - `stage21_cfg.py` / `train_stage21.py` — the falsified single-term hypothesis
+- `stage22_cfg.py` / `train_stage22.py` — the smooth hold gate; week 4's result
+- `replay_stage22.py` — films under `FrankaLiftStage20Cfg`, so every env draws its own cube
+- `probe_smoothness.py` — how hard the arm shakes, one number per policy
+- `probe_phases.py` / `run_phases.sh` — where the time goes and where the shake lives
+- `media/` — `stage22_hero.mp4`, and `stage22_grid25.mp4` / `stage20_grid25.mp4` at the same seed, therefore the same 25 cube positions

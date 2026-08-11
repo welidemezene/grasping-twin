@@ -1,0 +1,27 @@
+PHASE PROBE -- s16
+  checkpoint ../week3/week3/checkpoints/stage16_final
+  512 envs x 250 steps, deterministic, first episode only
+  grasp/airborne definitions copied from eval_shift.py
+
+  envs that reached the cube       434 / 512
+  envs that grasped                404 / 512
+  envs that grasped AND lifted     373 / 512
+
+  APPROACH  steps to reach the cube   median   24.0
+  DWELL     arrival -> first grasp    median   11.0   p90   12.0   max     15
+  LIFT_LAG  first grasp -> airborne   median    7.0   p90   10.0   max     25
+
+  RE-GRIPS  separate times the grasp condition took hold
+     median 1.0   mean 1.12   max 10
+     one rising edge = clean grasp; more = it dropped and recaught
+     envs with exactly 1: 366 / 404  (90.6%)
+
+  ARM ACTION DELTA BY PHASE (same statistic probe_smoothness.py reports
+  once for the whole episode -- if the shake is uniform these match)
+     approach  median 0.1390
+     dwell     median 0.2403
+     carry     median 0.1356
+
+  Steps, not seconds: divide by the control rate for wall time. A dwell of
+  0 means the grasp condition was true on the step the hand arrived, which
+  is the clean case.
