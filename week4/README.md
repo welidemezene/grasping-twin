@@ -456,7 +456,8 @@ to ~2 mm.
 noise floor and unresolved, and the 7 cm diagonal at 62.7% — where stage 16
 scored 0.0%.
 
-**Week 4's result is `stage22_final`**, superseding `stage20_final`.
+**Week 4's result is `stage22_final`**, superseding `stage20_final`. Stage 23
+tried to widen the spawn box afterward and did not take the title — see below.
 
 **What it cost:** tilt at 65–81°, worse than any policy in the project, and a
 carry that shakes twice as hard as stage 16's. Both are measured, neither is
@@ -474,6 +475,71 @@ front of a real camera, every time. Stage 20 is the first policy in this project
 that reads its sensor, and stage 22 keeps that while getting the lift back. That,
 not the 14 cm, is the part that transfers.
 
+## Stage 23 — after the week closed, and the wall did not move
+
+Week 4's result was already `stage22_final` when this ran. Stage 23 is a negative
+result recorded after the fact, and it is here so the failure is readable without
+digging through `git log`.
+
+**Where the idea came from.** `sweep_shift.sh` gives a verdict at one offset with
+512 trials, which is the right instrument for the gate and the wrong one for
+asking *where* a policy dies. `probe_envelope.py` spreads 512 trials over the
+whole ±15 cm box and bins them, so a bin holds tens of samples — it says where to
+aim, never whether a specific offset passes. On `stage22_final` it read **36.3%
+overall** and drew a clear shape: a band down the middle that holds to 100% at
+y = −0.129 — more than twice the training range, so **y is nearly free already**
+— and a hard cliff at |x| ≈ 0.06 in *both* directions.
+
+**And it named the cause.** The failures sat with arm joints **0.01 pinned at a
+limit on average, identical to the value on successes**. The arm could reach
+where it was failing, including at x = −0.13 where the cube is 13 cm *closer* to
+the base. That is a policy wall, not a kinematic one, and the one-variable change
+that addresses a policy wall is the training distribution.
+
+**THE ONE CHANGE: `SPAWN_RANGE` 0.05 → 0.12.** Everything else held — the smooth
+hold gate, 0.030 hold distance, `ent_coef`, learning rate, sticky hold. 0.12 and
+not 0.15 because the probe's outermost bins are already past what one mounting
+should be asked to cover, and 0.12 doubles the diagonal reach requirement, which
+is a large step on its own. 0.15 is the next notch and costs one probe to test.
+
+**It peaked at 3M steps and then spent 7M more destroying itself.**
+
+| checkpoint | envelope probe, 512 trials over ±15 cm | joints pinned on failures | verdict |
+| --- | --- | --- | --- |
+| `stage22_final` | 36.3% | 0.01 | policy wall |
+| `stage23_2995200` | **43.4%** | 0.16 | policy wall |
+| `stage23_6988800` | 25.8% | 1.12 | **kinematic wall** |
+| `stage23_final` | 0.0% ever grasped | — | collapse |
+
+`stage23_final` grasps **0 of 512 at zero offset** (`s23ctl_summary.txt`). The
+6.9M checkpoint is the more interesting corpse: its failures sit with joints
+*at* their limits, so by then the policy was flinging the arm at cube positions
+this mounting cannot reach — the probe's verdict line flips from POLICY WALL to
+KINEMATIC WALL on the same code, which is the probe working correctly.
+
+**The peak checkpoint bought coverage with lift.** `s23peak_summary.txt` runs
+`stage23_2995200` through the same six offsets: +7 points of envelope coverage,
+but median lift at zero offset falls **14.4 cm → 3.1 cm**, and it now FAILS the
+gate at 0 cm and at −y 4 cm — the two offsets `stage22_final` passes most
+cleanly. Better where the measurement is coarse, worse where it is careful.
+
+**Nine episodes cannot rank two policies.** `replay_solo_random.py` now takes a
+spawn half-width, so a policy can be filmed over the box it was trained on
+rather than the one the render defaulted to. Both policies were filmed at ±12 cm
+on the same seed, so they saw the **identical nine cube positions**:
+`stage22_final` lifted 7 of 9, `stage23_2995200` lifted 6 of 9 — for policies
+whose 512-trial scores differ by 7 points. Earlier the same day a 9-env render
+read **78%** for a policy the sweep puts at **41%**. The episode tables are
+committed so no ranking can later be read out of them; the clips demonstrate
+range, and the sweep remains the evidence.
+
+**What stands.** Week 4's result is still `stage22_final`. Widening the spawn box
+is not falsified — 43.4% at 3M steps is real, and it is the only thing in the
+project that has moved that number — but it is **not schedulable as a run that
+can be left alone**, because this one had no way to notice it had peaked. Any
+retry needs the envelope probe on a checkpoint ladder *during* the run, not a
+verdict on `_final` afterward.
+
 ## Files
 
 - `stage20_cfg.py` — randomized spawn (training) and fixed-offset (eval) configs
@@ -489,5 +555,8 @@ not the 14 cm, is the part that transfers.
 - `probe_smoothness.py` — how hard the arm shakes, one number per policy
 - `probe_phases.py` / `run_phases.sh` — where the time goes and where the shake lives
 - `replay_shifted.py` — films one fixed offset across all envs, the way the sweep measures
-- `replay_solo_random.py` — one arm through consecutive random-spawn episodes; logs each episode's spawn and outcome
-- `media/` — `shift50_s16_grid25.mp4` / `shift50_s22_grid25.mp4`, the same 5 cm diagonal for both policies; plus `stage22_hero.mp4` and the randomized-spawn grids
+- `replay_solo_random.py` — one arm through consecutive random-spawn episodes; logs each episode's spawn and outcome. Takes a spawn half-width, so a policy is filmed over the box it trained on
+- `probe_envelope.py` — 512 trials spread over the whole box, binned by spawn position; says *where* a policy dies and whether the wall is policy or kinematics. Not a substitute for `sweep_shift.sh`
+- `stage23_cfg.py` / `train_stage23.py` / `run_stage23.sh` — `SPAWN_RANGE` 0.05 → 0.12; the negative result
+- `checkpoints/` — `stage20_final`, `stage22_final` (week 4's result), and `stage23_2995200_steps` (stage 23's peak; its `_final` grasps 0 of 512 and was not kept)
+- `media/` — `shift50_s16_grid25.mp4` / `shift50_s22_grid25.mp4`, the same 5 cm diagonal for both policies; `stage22_solo_wide.mp4`, the postable cut; plus `stage22_hero.mp4` and the randomized-spawn grids
