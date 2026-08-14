@@ -1,0 +1,8 @@
+checkpoint checkpoints/stage23_2995200_steps
+offset x +0.000 y +0.000 (diagonal 0.0000 m)   hold 5   frames 249
+cube rests at z 0.0521 m; lift is measured from there
+gripper-cube gap: min 0.0050 m
+GRASP: first at frame 34
+NO HELD LIFT: grasped, but never cleared 0.020 m above rest (best +0.0075 m)
+
+One episode, one offset. The verdict at this offset is in week4/*_sweep.csv.
