@@ -69,6 +69,47 @@ The 7 cm diagonal is more dramatic for stage 16 (0.0%) but stage 22 also fails
 diagonal is where one policy nearly always fails and the other nearly always
 works, which is the honest version of the same point.
 
+## Progress
+
+| # | Step | State |
+| --- | --- | --- |
+| 1 | Record the four policies to JSON at two fixed offsets | done — `motion/`, 8 files |
+| 2 | **Viewer accepts the `{meta, frames}` format** | **in progress** |
+| 3 | Label and offset shown on screen, read from `meta` | not started |
+| 4 | Two policies side by side, scrubbing in sync | not started |
+| 5 | Vendor three.js instead of the CDN | not started |
+| 6 | Deploy to a public URL | not started |
+
+Step 4 is the one an MP4 cannot do, and the reason the tool is worth building.
+Steps 2 and 3 exist to make it possible.
+
+## Session log
+
+Kept because the documented failure mode on this project is not difficulty, it is
+**long gaps between bursts** — and the cost of a gap is paid in reorientation. A
+specific next action costs minutes to resume from; "continue the viewer" costs
+days.
+
+**2026-08-14 → 15.** Week 4 closed out in the README, including stage 23's
+collapse. Week 5 opened: `record_motion_w4.py` and `record_all_w4.sh` written,
+eight recordings produced in Docker, and a bad `lifted` threshold caught and
+moved into `derive_flags.py` — it tested `cube_z > 0.035` while the cube rests at
+`0.0521`, so all eight files had claimed a held lift, one of them while moving the
+cube −3.5 mm. `CLAUDE.md` written: he types, the AI explains.
+
+> **Next action.** In `viewer/index.html`, `load()` at line 447: add a `meta`
+> variable to the state list on line 445, and unwrap at the top of the function —
+> if `data` is not an array but `data.frames` is, keep `data.meta` and continue
+> with `data.frames`. Done when `week5/motion/s22_diag50.json` opens **and**
+> `viewer/motion_s16_final.json` still opens.
+
+> **What he can do unaided that he could not before.** Explain why nine episodes
+> cannot rank two policies and 512 can; state the difference between training and
+> evaluation; and read a JavaScript failure by tracing execution order rather than
+> trusting the error message — found by putting a `console.log` after a `throw`
+> and reasoning out why it never printed. The `load()` change itself is not
+> written yet.
+
 ## Files
 
 - `record_motion_w4.py` — exports one arm's trajectory to JSON at a **fixed**
