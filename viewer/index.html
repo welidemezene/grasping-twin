@@ -442,9 +442,14 @@ function lay(mesh, p0, p1, r){
 }
 
 /* ---------- data ---------- */
-let frames = [], N = 0, cursor = 0, playing = false, speed = 1, origin = null, isDemo = false, dropped = 0;
+let frames = [], N = 0, cursor = 0, playing = false, speed = 1, origin = null, isDemo = false, dropped = 0, meta = null;
 
 function load(data, robotFrame){
+
+  if (!Array.isArray(data) && Array.isArray(data.frames)){
+  meta = data.meta;
+  data = data.frames;
+}
   if(!Array.isArray(data) || !data.length) throw new Error('empty');
   if(!data[0].joints || !data[0].cube) throw new Error('missing joints or cube');
   const cut = episodeEnd(data);
