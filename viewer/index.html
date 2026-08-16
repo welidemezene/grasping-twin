@@ -171,7 +171,8 @@
 <div id="app">
 
   <header>
-    <div class="mark"><b>Grasping Twin</b><span>Motion replay</span></div>
+    <div class="mark"><b>Grasping Twin</b><span id="subtitle">Motion replay</span></div>
+    
     <div class="spacer"></div>
     <button id="btnLive">Go live</button>
     <button id="btnLoad">Load motion.json</button>
@@ -270,6 +271,7 @@ const DH = [
   {a: 0,       d: 0,     alpha:  Math.PI/2},
   {a: 0.088,   d: 0,     alpha:  Math.PI/2}
 ];
+
 const FLANGE = {a: 0, d: 0.107, alpha: 0};
 
 const REST_H  = 0.0210;   // cube centre height sitting on the table
@@ -445,13 +447,24 @@ function lay(mesh, p0, p1, r){
 let frames = [], N = 0, cursor = 0, playing = false, speed = 1, origin = null, isDemo = false, dropped = 0, meta = null;
 
 function load(data, robotFrame){
+  meta = null;
 
   if (!Array.isArray(data) && Array.isArray(data.frames)){
   meta = data.meta;
   data = data.frames;
 }
+
+
+
   if(!Array.isArray(data) || !data.length) throw new Error('empty');
   if(!data[0].joints || !data[0].cube) throw new Error('missing joints or cube');
+  if (meta) {
+  document.getElementById('subtitle').textContent = `${meta.label} . ${(meta.shift_diagonal_m * 100) . toFixed(1)} cm`;
+}
+else {
+  document.getElementById('subtitle').textContent = 'Motion replay';
+
+}
   const cut = episodeEnd(data);
   dropped = data.length - cut;
   frames = data.slice(0, cut); N = frames.length; cursor = 0;
