@@ -1,0 +1,3 @@
+# The viewer never reads these, and they are 230 MB of MP4 -- uploading them on
+# every deploy is slow and pointless. week5/motion/ IS needed and must stay.
+week4/media/
