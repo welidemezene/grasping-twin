@@ -337,15 +337,25 @@ world.add(table);
 const matLink = new THREE.MeshStandardMaterial({color:0xdedbd4, roughness:.42, metalness:.14});
 const matJoint= new THREE.MeshStandardMaterial({color:0x33373f, roughness:.55, metalness:.35});
 const matGrip = new THREE.MeshStandardMaterial({color:0x3a3f48, roughness:.5,  metalness:.4});
+const RADII = [0.045,0.043,0.041,0.039,0.036,0.033,0.030,0.028];
+
+const TCP_Z    = 0.1034;   // flange -> fingertip, verified against ee vs base
+const FINGER_L = 0.055;
+const FINGER_T = 0.014;
+function makeRig(){
+
+
 
 const robot = new THREE.Group();
 world.add(robot);
+
+
 
 const base = new THREE.Mesh(new THREE.CylinderGeometry(0.075,0.088,0.05,32), matJoint);
 base.rotation.x = Math.PI/2; base.position.z = 0.025; base.castShadow = true;
 robot.add(base);
 
-const RADII = [0.045,0.043,0.041,0.039,0.036,0.033,0.030,0.028];
+
 const segs = [], knuckles = [];
 for(let i=0;i<8;i++){
   const c = new THREE.Mesh(new THREE.CylinderGeometry(1,1,1,20), matLink);
@@ -360,8 +370,7 @@ for(let i=0;i<8;i++){
    constant means the kinematics are right and only the endpoint was wrong: the
    fingers used to be drawn 0.031 m past the flange, i.e. 72 mm short, floating
    with nothing between them and the wrist. Grasps looked like near-misses. */
-const TCP_Z    = 0.1034;   // flange -> fingertip, verified against ee vs base
-const FINGER_L = 0.055;
+
 /* Thickness of a finger along the OPENING axis. This matters more than it
    looks: panda_finger_joint measures the centreline-to-INNER-FACE distance,
    i.e. the gripping surface, not the finger's centre. Drawing the box centred
@@ -370,7 +379,7 @@ const FINGER_L = 0.055;
    as the fingers 5.5 mm INSIDE the cube. That is the "no physics law" the
    screenshot showed -- a drawing error, not a PhysX one. Offset by half the
    thickness so the inner face lands on the joint value. */
-const FINGER_T = 0.014;
+
 const fingerL = new THREE.Mesh(new THREE.BoxGeometry(0.016,FINGER_T,FINGER_L), matGrip);
 const fingerR = fingerL.clone();
 fingerL.castShadow = fingerR.castShadow = true;
@@ -387,7 +396,7 @@ const cube = new THREE.Mesh(
                                   emissive:0x5a3a00, emissiveIntensity:.35})
 );
 cube.castShadow = true;
-world.add(cube);
+robot.add(cube);
 
 /* The measured end-effector, straight from the recording's ee field — not from
    the drawn arm. The line to the cube is the distance the grasp reward cares
@@ -397,14 +406,20 @@ const eeDot = new THREE.Mesh(
   new THREE.MeshBasicMaterial({color:0x5FD98B})
 );
 eeDot.visible = false;
-world.add(eeDot);
+robot.add(eeDot);
 
 const gapLine = new THREE.Line(
   new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]),
   new THREE.LineBasicMaterial({color:0xE8654F})
 );
 gapLine.visible = false;
-world.add(gapLine);
+robot.add(gapLine);
+
+return { group: robot, segs, knuckles, fingerL, fingerR, hand, cube, eeDot, gapLine };}
+
+const rig = makeRig();
+const { segs, knuckles, fingerL, fingerR, hand, cube, eeDot, gapLine } = rig;
+
 
 /* dashed threshold plane the cube must clear */
 const gate = new THREE.Mesh(
@@ -516,7 +531,7 @@ function episodeEnd(data){
 function apply(i){
   cursor = i;
   const f = frames[i];
-  drawFrame(f);
+  drawFrame(f, rig);
   paintReadout(f, i);
   document.getElementById('scrub').value = i;
   document.getElementById('fNow').textContent = i;
@@ -525,7 +540,8 @@ function apply(i){
 
 /* Draws one frame. Used both by the recorded replay and by live mode, which
    has no frames array — only whatever the simulator wrote a moment ago. */
-function drawFrame(f){
+function drawFrame(f, rig){
+  const { segs, knuckles, fingerL, fingerR, hand, cube, eeDot, gapLine } = rig;
   const th = f.joints;
   const {pts, flange} = solve(th);
 
@@ -704,7 +720,7 @@ function startLive(){
       const r = await fetch('live.json?t=' + Date.now(), {cache:'no-store'});
       if(!r.ok) throw new Error('no file');
       const f = await r.json();
-      drawFrame(f);
+      drawFrame(f, rig);
       paintReadout(f, 0);
       document.getElementById('fNow').textContent = f.step;
       missed = 0;
