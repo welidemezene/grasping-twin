@@ -4,7 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Grasping Twin · Motion Replay</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="vendor/three.min.js"></script>
+
 <style>
   :root{
     --graphite:#16181C;
@@ -824,6 +825,19 @@ solve([0,-0.55,0,-2.3,0,1.75,0.78]).pts.forEach((p,i)=>{ if(i<8) knuckles[i].pos
   hand.translateZ((TCP_Z - FINGER_L)/2);
   cube.position.set(TABLE_X, 0, REST_H);
 })();
+async function loadDefault(){
+  try {
+    const r = await fetch('../week5/motion/s22_diag50.json');
+    if (!r.ok) throw new Error('not found');
+    const d = await r.json();
+    load(d);
+
+  }
+  catch (e) {
+
+  }
+}
+loadDefault();
 </script>
 </body>
 </html>
