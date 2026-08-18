@@ -418,8 +418,11 @@ robot.add(gapLine);
 return { group: robot, segs, knuckles, fingerL, fingerR, hand, cube, eeDot, gapLine };}
 
 const rig = makeRig();
+const rigB = makeRig();
+rigB.group.position.y = 0.5;
 const { segs, knuckles, fingerL, fingerR, hand, cube, eeDot, gapLine } = rig;
-
+let framesB = [];
+let metaB = null;
 
 /* dashed threshold plane the cube must clear */
 const gate = new THREE.Mesh(
@@ -462,6 +465,16 @@ function lay(mesh, p0, p1, r){
 /* ---------- data ---------- */
 let frames = [], N = 0, cursor = 0, playing = false, speed = 1, origin = null, isDemo = false, dropped = 0, meta = null;
 
+
+function paintSubtitle(){
+  const el = document.getElementById('subtitle');
+  if (!meta) { el.textContent = 'Motion replay'; return; }
+  const cm = (meta.shift_diagonal_m * 100).toFixed(1);
+  el.textContent = metaB
+    ? `${metaB.label} (left)  vs  ${meta.label} (right) · ${cm} cm`
+    : `${meta.label} · ${cm} cm`;
+}
+ 
 function load(data, robotFrame){
   meta = null;
 
@@ -474,13 +487,9 @@ function load(data, robotFrame){
 
   if(!Array.isArray(data) || !data.length) throw new Error('empty');
   if(!data[0].joints || !data[0].cube) throw new Error('missing joints or cube');
-  if (meta) {
-  document.getElementById('subtitle').textContent = `${meta.label} . ${(meta.shift_diagonal_m * 100) . toFixed(1)} cm`;
-}
-else {
-  document.getElementById('subtitle').textContent = 'Motion replay';
+  
 
-}
+  paintSubtitle();
   const cut = episodeEnd(data);
   dropped = data.length - cut;
   frames = data.slice(0, cut); N = frames.length; cursor = 0;
@@ -532,6 +541,9 @@ function apply(i){
   cursor = i;
   const f = frames[i];
   drawFrame(f, rig);
+  const fb = framesB[Math.min(i, framesB.length - 1)];
+  if (fb) drawFrame(fb, rigB);
+
   paintReadout(f, i);
   document.getElementById('scrub').value = i;
   document.getElementById('fNow').textContent = i;
@@ -854,6 +866,20 @@ async function loadDefault(){
   }
 }
 loadDefault();
+async function loadB(url){
+  try {
+    const r = await fetch(url);
+    if (!r.ok) throw new Error('not found');
+    const d = await r.json();
+    framesB = Array.isArray(d) ? d : d.frames;
+    metaB = d.meta;
+    paintSubtitle();
+  } catch (e) {
+    console.warn('rigB failed to load:', e);
+  }
+}
+loadB('../week5/motion/s16_diag50.json');
+
 </script>
 </body>
 </html>
