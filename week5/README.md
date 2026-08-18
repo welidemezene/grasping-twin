@@ -73,12 +73,12 @@ works, which is the honest version of the same point.
 
 | # | Step | State |
 | --- | --- | --- |
-| 1 | Record the four policies to JSON at two fixed offsets | done — `motion/`, 8 files |
-| 2 | **Viewer accepts the `{meta, frames}` format** | **in progress** |
-| 3 | Label and offset shown on screen, read from `meta` | not started |
-| 4 | Two policies side by side, scrubbing in sync | not started |
-| 5 | Vendor three.js instead of the CDN | not started |
-| 6 | Deploy to a public URL | not started |
+| 1 | Record the four policies to JSON at two fixed offsets | done &mdash; `motion/`, 8 files |
+| 2 | Viewer accepts the `{meta, frames}` format | done |
+| 3 | Label and offset shown on screen, read from `meta` | done |
+| 4 | **Two policies side by side, scrubbing in sync** | **done** |
+| 5 | Vendor three.js instead of the CDN | done &mdash; `viewer/vendor/` |
+| 6 | Deploy to a public URL | done &mdash; https://grasping-twin.vercel.app/ |
 
 Step 4 is the one an MP4 cannot do, and the reason the tool is worth building.
 Steps 2 and 3 exist to make it possible.
@@ -97,18 +97,37 @@ moved into `derive_flags.py` — it tested `cube_z > 0.035` while the cube rests
 `0.0521`, so all eight files had claimed a held lift, one of them while moving the
 cube −3.5 mm. `CLAUDE.md` written: he types, the AI explains.
 
-> **Next action.** In `viewer/index.html`, `load()` at line 447: add a `meta`
-> variable to the state list on line 445, and unwrap at the top of the function —
-> if `data` is not an array but `data.frames` is, keep `data.meta` and continue
-> with `data.frames`. Done when `week5/motion/s22_diag50.json` opens **and**
-> `viewer/motion_s16_final.json` still opens.
+**2026-08-16 &rarr; 18.** The viewer became a comparison tool, and he wrote it.
+`load()` now unwraps `{meta, frames}` and accepts week 3's bare arrays unchanged;
+the header names the policy and offset from the file's own metadata; three.js is
+vendored; the page fetches a recording on open so a stranger sees something; and
+it is deployed. Then the refactor: mesh creation became a `makeRig()` factory,
+`drawFrame(f)` became `drawFrame(f, rig)`, and a second rig offset in y replays a
+second recording under one cursor &mdash; so the two arms cannot drift apart.
 
-> **What he can do unaided that he could not before.** Explain why nine episodes
-> cannot rank two policies and 512 can; state the difference between training and
-> evaluation; and read a JavaScript failure by tracing execution order rather than
-> trusting the error message — found by putting a `console.log` after a `throw`
-> and reasoning out why it never printed. The `load()` change itself is not
-> written yet.
+Four bugs worth keeping, all his, all found by reading the console rather than
+guessing: a `console.log` placed after a `throw` (never reached &mdash; execution
+order); `array.isArray` for `Array.isArray` and `paintsubtitle` for
+`paintSubtitle` (JavaScript is case-sensitive); `meta` surviving between loads
+because it is declared outside the function, leaving stage 22's label on stage
+16's recording; and `RADII`, `TCP_Z`, `FINGER_L`, `FINGER_T` swallowed by the new
+function while still used outside it.
+
+> **Next action.** Confirm on a phone that both arms render and move, and check
+> that stage 16 really is the left arm &mdash; `rigB.group.position.y = 0.5` moves
+> one of them, and if the header has left and right the wrong way round, swap the
+> two words on `viewer/index.html:474`. A confidently wrong label is the one
+> failure this tool exists to prevent. Then week 6 opens: stage 24, the &plusmn;12
+> cm retry, where he writes the checkpoint-evaluation ladder that stage 23 lacked.
+
+> **What he can do unaided that he could not before.** Read a JavaScript error and
+> trace it to its cause &mdash; a missing file, a mistyped id, a capital letter, a
+> variable out of scope &mdash; instead of describing symptoms. Explain why a
+> variable declared outside a function survives between calls and must be reset.
+> Write an `async` fetch that loads JSON and hands it to existing code. Run a local
+> server and know why `file://` breaks `fetch`. Extract a function and reason about
+> which constants must stay outside it. And pass a target as a parameter so one
+> function can drive two objects &mdash; which is what made the comparison possible.
 
 ## Files
 
