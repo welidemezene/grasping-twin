@@ -1,4 +1,4 @@
-import glob, os, subprocess, csv
+import glob, os, subprocess, csv, sys
 
 
 
@@ -6,17 +6,26 @@ CKPT_DIR = '/home/woldemedihn/grasping_twin/week4/checkpoints'
 STAGE = 'stage23'
 REPO = '/home/woldemedihn/grasping_twin'
 IMAGE = 'grasping-twin-isaaclab:latest'
+N_BELOW = 3
 
-paths = glob.glob(os.path.join(CKPT_DIR, f'{STAGE}_*_steps.zip'))
+names = sys.argv[1:]
+if names:
+    paths = [os.path.join(CKPT_DIR, n) for n in names]
+else:
+    paths = glob.glob(os.path.join(CKPT_DIR, f'{STAGE}_*.zip'))
+
 
 
 def step_of(path):
     name = os.path.basename(path)
+    if 'final' in name:
+        return 10000000
     return int(name.split('_')[1])
 
 
 def ckpt_arg(path):
     name = os.path.basename(path)
+   
     return f'checkpoints/{name[:-4]}'
 
 
@@ -59,10 +68,13 @@ paths.sort(key=step_of)
 print(len(paths), 'checkpoints')
 
 out_csv = f'{REPO}/week6/{STAGE}_ladder.csv'
-
+rows = []
 with open(out_csv, 'w', newline='') as f:
     w = csv.writer(f)
     w.writerow(['step', 'coverage', 'joints_on_fail', 'verdict'])
+
+    
+
 
     for p in paths:
         txt = run_probe(p)
@@ -70,8 +82,39 @@ with open(out_csv, 'w', newline='') as f:
             continue
         coverage, joints, verdict = parse_probe(txt)
         w.writerow([step_of(p), coverage, joints, verdict])
+        rows.append([step_of(p), coverage, joints, verdict])
+
+
         f.flush()
         print(step_of(p), coverage, verdict, flush=True)
 
 print('wrote', out_csv)
+peak = max(rows, key=lambda row: row[1])
+threshold = peak[1] * 0.9
+overrun = rows[-1][0] - peak[0]
+
+count = 0
+streak_start = None
+i = rows.index(peak)
+
+for row in rows[i+1:]:
+    if row[1] < threshold:              
+        count = count + 1
+        if count == 1:
+            streak_start = row[0]    
+    else:
+        count = 0
+        streak_start = None
+
+    if count == N_BELOW:              
+        print(f'peak rule fired at step {streak_start}')
+        break  
+if count < N_BELOW:
+    print('peak rule never fired')
+
+
+
+print(f'peak {peak[1]}% at step {peak[0]}')
+print(f'threshold {threshold:.1f}%')
+print(f'run continued {overrun} steps past the peak')
 
