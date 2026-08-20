@@ -39,7 +39,9 @@ def parse_probe(txt_path):
         elif 'on failures' in line:
             joints = float(line.split('on failures')[1].strip())
         elif 'VERDICT:' in line:
-            verdict = 'KINEMATIC' if 'KINEMATIC' in line else 'POLICY'
+           after = line.split('VERDICT:')[1].strip()      
+           verdict = after.split()[0].strip('.,')  
+
     return coverage, joints, verdict
 
 

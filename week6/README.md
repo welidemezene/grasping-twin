@@ -125,3 +125,30 @@ errors in headless logs are always present and are never a signal.
 The full checkpoint ladder lives only in the WSL compute copy
 (`~/grasping_twin/week4/checkpoints/`), about 200 files. The Windows git copy
 holds three.
+
+
+## Results
+
+- swept 51 checkpoints, ~87s each
+- best: 47.7% at step 4193280
+- week 4 said: 43.4% at step 2995200
+
+
+- peak rule fired at step 5191680, would have saved ~4.8M steps
+- run continued 5.8M steps past its peak
+
+## The metric was too loose
+
+- probe_envelope.py: AIRBORNE = 0.005 -> counts a 5 mm lift as success
+- the gate wants 10 cm -> 20x stricter
+- so coverage measures reach, not lift
+
+
+- peak rule fired at step 5191680, would have saved ~4.8M steps
+- run continued 5.8M steps past its peak
+
+## The metric was too loose
+
+- probe_envelope.py: AIRBORNE = 0.005 -> counts a 5 mm lift as success
+- the gate wants 10 cm -> 20x stricter
+- so coverage measures reach, not lift
