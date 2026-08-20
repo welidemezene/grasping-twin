@@ -152,3 +152,28 @@ holds three.
 - probe_envelope.py: AIRBORNE = 0.005 -> counts a 5 mm lift as success
 - the gate wants 10 cm -> 20x stricter
 - so coverage measures reach, not lift
+
+## The sweep: no new record
+
+- ran `sweep_shift.sh` on `stage23_4193280`, 6 offsets
+- passes 2 of 6. `stage22_final` passes 4 of 6
+- centre lift 3.05 cm against a 10 cm bar
+- x = 0   -> lift 3 cm, tilt 26 deg
+- x != 0  -> lift 10.5 cm, tilt 84 deg
+- so the "good" lifts tip the cube nearly on its side: a different and worse
+  strategy, not a better grasp
+
+## What the instrument itself got wrong
+
+- `probe_envelope.py` is unseeded: the same checkpoint scored up to 6.4 points
+  apart across runs, so the phase 2 gate needed a tolerance and never stated one
+- `parse_probe` read 2 of 4 verdicts (`MIXED` and `AMBIGUOUS` were both logged as
+  `POLICY`, the most optimistic reading) - fixed 2026-08-20
+- `step_of` returns the sentinel `10000000` for any `final`, so `stage22_final`
+  and `stage23_final` collide and `overrun` uses a fake last step
+- checkpoint `9384960` failed and was silently skipped: 51 rows out of 52
+  arguments, and the summary never said so
+
+## Did phase 2 pass?
+
+-
