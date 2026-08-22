@@ -1,7 +1,8 @@
 # Daily log
 
-2026-08-20 | DSA: Group Anagrams 50 min, Top K solved | shipped: week6 writeup | sleep: 5h + 2h nap
-2026-08-21 | DSA: ? | shipped: ? | sleep: ?
+22026-08-21 | DSA: Top K, Encode/Decode Strings | shipped: week6 closed, lerobot running in WSL | sleep: 6h
+2026-08-22 | DSA: product of array except self | shipped: rendered first real robot frame from svla_so101_pickplace | sleep: 6h
+
 ## Images
 A picture is just numbers. PyTorch stores it as 3 stacked sheets
 (all reds, all greens, all blues). Image files store it dot by dot
