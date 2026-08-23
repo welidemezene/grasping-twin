@@ -17,3 +17,5 @@ Read the prompt before typing. (lerobot) = venv on. woldemedihn@ = WSL.
 ## Python
 Every time python runs it starts fresh. Variables do not survive.
 python -c is for one lines only. Use a file and re-run it.
+## Where am I
+Read the prompt before typing. (lerobot) = venv on. woldemedihn@ = WSL.
