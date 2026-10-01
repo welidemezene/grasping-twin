@@ -176,4 +176,6 @@ holds three.
 
 ## Did phase 2 pass?
 
+technically it looks did not passed but after we the whole system(process) at somepoint it have a good progress.
+
 -
