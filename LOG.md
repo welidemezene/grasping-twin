@@ -19,3 +19,8 @@ Every time python runs it starts fresh. Variables do not survive.
 python -c is for one lines only. Use a file and re-run it.
 ## Where am I
 Read the prompt before typing. (lerobot) = venv on. woldemedihn@ = WSL.
+
+
+what i learn today
+
+we have a frames and we use the list data and draw it to see the real and pridicted one , and look on the difference gap we have which is a time it takes to start.
