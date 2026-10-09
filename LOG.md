@@ -24,3 +24,11 @@ Read the prompt before typing. (lerobot) = venv on. woldemedihn@ = WSL.
 what i learn today
 
 we have a frames and we use the list data and draw it to see the real and pridicted one , and look on the difference gap we have which is a time it takes to start.
+
+
+yesterday i solved in neetcode 75 in array and hashing the first three easy question.
+
+then today i solved the longest conscutive number.
+it is a middium question i solved by my self with in the first 30 minute it was nlogn(n) times but it should be log(n).
+
+the reason it become nlog(n) is we use sort() then we iterate on them check two index at the same times have a cnt and also max then we resolve it but next am gona solve it in a log(n) times which i have to use other data types.
