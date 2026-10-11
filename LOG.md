@@ -29,6 +29,10 @@ we have a frames and we use the list data and draw it to see the real and pridic
 yesterday i solved in neetcode 75 in array and hashing the first three easy question.
 
 then today i solved the longest conscutive number.
-it is a middium question i solved by my self with in the first 30 minute it was nlogn(n) times but it should be log(n).
+it is a middium question i solved by my self with in the first 30 minute it was nlogn(n) times but it should be o(n).
 
-the reason it become nlog(n) is we use sort() then we iterate on them check two index at the same times have a cnt and also max then we resolve it but next am gona solve it in a log(n) times which i have to use other data types.
+the reason it become nlog(n) is we use sort() then we iterate on them check two index at the same times have a cnt and also max then we resolve it but next am gona solve it in a o(n) times which i have to use other data types.
+
+in today october 11 
+
+i understand more better the concepts we have what each key word is and also we trying to understand with one number first before doing for a 42 number so i understand everythings what the sensor have what the command and also and also there is a things we need also got a prediction by multiplying the state and w and also we have an slopes to check the loss and also the gaps we have to move forward and also backward this is what we have been working for todays.
