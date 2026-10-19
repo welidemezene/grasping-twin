@@ -1,6 +1,8 @@
 from lerobot.datasets import LeRobotDataset
 import torch
 from torch import nn
+import matplotlib.pyplot as plt 
+
 
 ds = LeRobotDataset('lerobot/svla_so101_pickplace')
 
@@ -62,11 +64,19 @@ for step in range(3000):
 
     if step % 100 == 0:
         print(step, loss.item())
+final = model(states).detach()
 
 
 
+plt.plot(final[:, 5], label='model guess')
+plt.plot(action[:, 5], label='human command')
+plt.plot(states[:, 5], label='real gripper (copy-cat)')
 
 
 
-
+plt.xlabel('frame (30 per second)')
+plt.ylabel('gripper position')
+plt.legend()
+plt.savefig('week7/bc_gripper.png')
+print('saved')
 
