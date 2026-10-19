@@ -36,3 +36,34 @@ the reason it become nlog(n) is we use sort() then we iterate on them check two 
 in today october 11 
 
 i understand more better the concepts we have what each key word is and also we trying to understand with one number first before doing for a 42 number so i understand everythings what the sensor have what the command and also and also there is a things we need also got a prediction by multiplying the state and w and also we have an slopes to check the loss and also the gaps we have to move forward and also backward this is what we have been working for todays.
+
+
+
+
+
+In your plot: blue = your model, orange = the human, green = the real gripper.
+
+Q1. Between frames 170 and 220, the green line is stuck at 7, but your blue line is near 1, like the orange line.
+→ How can your model guess 1 when the gripper sensor says 7?
+
+when the arm is in this carrying position, the human is squeezing, so guess about 1." It used the other joints as clues, even though the gripper sensor said 7
+
+Q2. Compare blue (your model) and green (the copy-cat) against orange (the human).
+→ In which part of the plot is your model closer to the human than the copy-cat is?
+
+
+Frames 170–220 are where your model beats the copy-cat by the most. The copy-cat is off by 6 there (7 vs 1), which squares to 36, for about 50 frames.
+
+
+Q3. Around frame 222, the orange line goes up first, and the blue line goes up later.
+→ Why does your model react late?
+
+ The lag is part of it, but the main reason is this: the human decides to open the gripper in their head first.
+
+Q4. Around frame 235, the blue line goes below 0, which a real gripper can't do.
+→ Why can your model output a number that's impossible?
+The learning rate only controls how fast training goes. The real reason: a linear model is just a weighted sum of numbers, with no limits. 
+
+
+
+
