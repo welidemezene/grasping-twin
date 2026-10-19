@@ -42,3 +42,6 @@ i understand more better the concepts we have what each key word is and also we 
 
 
 so today we sumerize the graph we had and we check in three plots the model , copy-cat and also the human command i have been checking the difference it have by comparing in graphs and try to understand everythings.
+
+next action: test the trained model on episode 1 (unseen) and compare with the copy-cat.
+
