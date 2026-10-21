@@ -20,12 +20,33 @@ for i in range(start,end):
 states = torch.stack(actual)
 action = torch.stack(command)
 
+ep1 = ds.meta.episodes[1]
+start1 = ep1['dataset_from_index']
+end1 = ep1['dataset_to_index']
+
+test_command = []
+test_actual = []
+
+for i in range(start1,end1):
+    test_command.append(ds[i]['action'])
+    test_actual.append(ds[i]['observation.state'])
+test_states = torch.stack(test_actual)
+test_action = torch.stack(test_command)
 copycat = ((states - action) **2).mean()
-print("copy-cat loss:", copycat)
+test_copycat = ((test_states - test_action) **2).mean()
+print("copy-cat loss ep0:", copycat)
+print("copy-cat loss ep1:", test_copycat)
+
+
+
+
 
 print(states.shape)
 print(action.shape)
 print(states.dtype)
+
+print(test_states.shape, test_action.shape)
+
 
 print(len(command),len(actual))
 
@@ -65,6 +86,12 @@ for step in range(3000):
     if step % 100 == 0:
         print(step, loss.item())
 final = model(states).detach()
+
+final = model(states).detach()
+with torch.no_grad():
+    test_guesses = model(test_states)
+    test_loss = ((test_guesses - test_action) ** 2).mean()
+print("model loss ep1:", test_loss)
 
 
 
