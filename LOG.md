@@ -45,4 +45,8 @@ so today we sumerize the graph we had and we check in three plots the model , co
 
 next action: test the trained model on episode 1 (unseen) and compare with the copy-cat.
 
-can no do: read and understand what was most of things which i did not know last times the syntax and am understanding more why and how we going to do it.
+can now do: read and understand what was most of things which i did not know last times the syntax and am understanding more why and how we going to do it.
+
+
+
+today i work with the different epsodes i check the ep1 our trained not to memorize only one epsode and we got the copy-cat and i were gussed them first time before run it 
