@@ -7,35 +7,68 @@ import matplotlib.pyplot as plt
 ds = LeRobotDataset('lerobot/svla_so101_pickplace')
 
 
-ep0 = ds.meta.episodes[0]
-start = ep0['dataset_from_index']
-end = ep0['dataset_to_index']
+# ep0 = ds.meta.episodes[0]
+# start = ep0['dataset_from_index']
+# end = ep0['dataset_to_index']
+
+# command = []
+# actual = []
+
+# for i in range(start,end):
+#     command.append(ds[i]['action'])
+#     actual.append(ds[i]['observation.state'])
+# states = torch.stack(actual)
+# action = torch.stack(command)
+
+# ep1 = ds.meta.episodes[1]
+# start1 = ep1['dataset_from_index']
+# end1 = ep1['dataset_to_index']
+
+# test_command = []
+# test_actual = []
+
+# for i in range(start1,end1):
+#     test_command.append(ds[i]['action'])
+#     test_actual.append(ds[i]['observation.state'])
+# test_states = torch.stack(test_actual)
+# test_action = torch.stack(test_command)
+
 
 command = []
 actual = []
+for e in range(0, 40):
+    epe = ds.meta.episodes[e]
+    start = epe['dataset_from_index']
+    end = epe['dataset_to_index']
 
-for i in range(start,end):
-    command.append(ds[i]['action'])
-    actual.append(ds[i]['observation.state'])
+    for i in range(start, end):
+        command.append(ds[i]['action'])
+        actual.append(ds[i]['observation.state'])
 states = torch.stack(actual)
 action = torch.stack(command)
 
-ep1 = ds.meta.episodes[1]
-start1 = ep1['dataset_from_index']
-end1 = ep1['dataset_to_index']
 
 test_command = []
 test_actual = []
+for e in range(40,50):
+    epe = ds.meta.episodes[e]
+    test_start = epe['dataset_from_index']
+    test_end = epe['dataset_to_index']
 
-for i in range(start1,end1):
-    test_command.append(ds[i]['action'])
-    test_actual.append(ds[i]['observation.state'])
+    for i in range(test_start, test_end):
+        test_command.append(ds[i]['action'])
+        test_actual.append(ds[i]['observation.state'])
 test_states = torch.stack(test_actual)
 test_action = torch.stack(test_command)
+
+
+
+
+
 copycat = ((states - action) **2).mean()
 test_copycat = ((test_states - test_action) **2).mean()
-print("copy-cat loss ep0:", copycat)
-print("copy-cat loss ep1:", test_copycat)
+print("copy-cat loss train:", copycat)
+print("copy-cat loss test:", test_copycat)
 
 
 
@@ -87,7 +120,7 @@ for step in range(3000):
         print(step, loss.item())
 final = model(states).detach()
 
-final = model(states).detach()
+
 with torch.no_grad():
     test_guesses = model(test_states)
     test_loss = ((test_guesses - test_action) ** 2).mean()
@@ -95,15 +128,15 @@ print("model loss ep1:", test_loss)
 
 
 
-plt.plot(final[:, 5], label='model guess')
-plt.plot(action[:, 5], label='human command')
-plt.plot(states[:, 5], label='real gripper (copy-cat)')
+# plt.plot(final[:, 5], label='model guess')
+# plt.plot(action[:, 5], label='human command')
+# plt.plot(states[:, 5], label='real gripper (copy-cat)')
 
 
 
-plt.xlabel('frame (30 per second)')
-plt.ylabel('gripper position')
-plt.legend()
-plt.savefig('week7/bc_gripper.png')
-print('saved')
+# plt.xlabel('frame (30 per second)')
+# plt.ylabel('gripper position')
+# plt.legend()
+# plt.savefig('week7/bc_gripper.png')
+# print('saved')
 
