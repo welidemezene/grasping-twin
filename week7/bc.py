@@ -89,8 +89,7 @@ print(command[0])
 
 total = 0
 
-model = nn.Linear(6,6)
-
+model = nn.Sequential(nn.Linear(6,64), nn.ReLU(), nn.Linear(64,6))
 
 optimizer = torch.optim.Adam(model.parameters(), lr=0.01) 
 
@@ -124,7 +123,7 @@ final = model(states).detach()
 with torch.no_grad():
     test_guesses = model(test_states)
     test_loss = ((test_guesses - test_action) ** 2).mean()
-print("model loss ep1:", test_loss)
+print("model loss test:", test_loss)
 
 
 
