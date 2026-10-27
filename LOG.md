@@ -50,3 +50,11 @@ can now do: read and understand what was most of things which i did not know las
 
 
 today i work with the different epsodes i check the ep1 our trained not to memorize only one epsode and we got the copy-cat and i were gussed them first time before run it 
+
+
+Changed: straight line (42 knobs) → MLP with ReLU (838 knobs)
+Result: test 23.2 → 11.4 / 11.6 (2 runs); copy-cat 28.5
+Means: so when we used an MLP there is an ReLu which will help us to use a condition zero or the number itself based on condition that is all what an ReLU does.
+
+Next: install Ubuntu, then train ACT in sim
+Can now do: finish the whole concepts the am gona install and setup the ubuntu
