@@ -58,3 +58,6 @@ Means: so when we used an MLP there is an ReLu which will help us to use a condi
 
 Next: install Ubuntu, then train ACT in sim
 Can now do: finish the whole concepts the am gona install and setup the ubuntu
+
+
+yesterday and today i trained a model using ACT which have a joint and also video our model learns from both the data and have a millions of knobs but we did not achive what we planed to achive first time our plan was to achive more than an 80% but we stack at 78% the worst things is it was not even impoving after 40k so i was tests what was the issue buy minimum test i think it would need more demo based on where it failing and also more loops may help
