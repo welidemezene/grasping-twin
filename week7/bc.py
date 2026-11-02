@@ -88,7 +88,7 @@ print(command[0])
 
 
 total = 0
-
+torch.manual_seed(2)
 model = nn.Sequential(nn.Linear(6,64), nn.ReLU(), nn.Linear(64,6))
 
 optimizer = torch.optim.Adam(model.parameters(), lr=0.01) 
