@@ -75,7 +75,7 @@ My prediction: more than 80%, whatever the setting.
 
 
 
-## Re-planning sweep: results (table and notes written by Claude)
+## Re-planning sweep: results
 
 Same 100k checkpoint, no retraining. Only `n_action_steps` (how many of the 100 predicted actions are executed before the policy looks again) changes. 100 episodes per cell. Script: [sweep.sh](sweep.sh).
 
@@ -110,3 +110,38 @@ A seed fixes where the cube is placed in each episode, so each seed is a fixed s
 
 On seed 2000, setting 50 beat setting 100 by only 2 points, inside the ±6 noise. So even though 92% looked like a good number, it was mostly luck.
 
+
+## Where it fails (failure stages + videos)
+
+Stage of each failed episode = its max reward (gym_aloha `tasks/sim.py`): 0 reach, 1 grasp, 2 carry (lifted, left gripper never touched it), 3 handover. Counted with [tools/count_failures.py](tools/count_failures.py).
+
+| run | failures | reach | grasp | carry | handover |
+|---|---|---|---|---|---|
+| seed 1000, setting 100 | 24 | 0 | 7 | 17 | 0 |
+| seed 1000, setting 50 | 8 | 0 | 2 | 6 | 0 |
+| seed 2000, setting 100 | 17 | 0 | 5 | 12 | 0 |
+| seed 2000, setting 50 | 15 | 0 | 0 | 15 | 0 |
+| seed 2000, setting 50, re-run with all videos | 9 | 0 | 2 | 7 | 0 |
+| seed 1000, setting 25 | 37 | 7 | 3 | 27 | 0 |
+| seed 1000, setting 10 | 93 | 63 | 9 | 21 | 0 |
+| seed 1000, ensemble | 29 | 6 | 9 | 14 | 0 |
+
+**Runs are not deterministic.** The re-run of seed 2000 / setting 50 (same weights, same seed) scored 91% instead of 85%. All 9 of its failures were also failures in the first run; 6 episodes flipped from fail to success. So about 9 cube positions fail every time, and some borderline ones can go either way. Even the same seed moves a few points between runs. Videos for all 100 episodes: [tools/eval_all_videos.py](tools/eval_all_videos.py).
+
+What I saw in the videos (Woldemedihn):
+
+- With setting 100, when the robot misses the grasp it still lifts as if it held the cube, and only notices and retries much later. With setting 50 it notices within a short time and tries to grasp again. This is the "blind for 2 seconds" effect from my hypothesis, seen directly, and it is why setting 50 does better.
+- The remaining failures are mostly at the handover: the cube is lifted, but the two arms do not meet in the right place, so the left gripper never touches it.
+
+## Goal: beat LeRobot's published 83% (gate written before the run)
+
+LeRobot's ACT on the same human data and task scores **83%** over 500 episodes ([model card](https://huggingface.co/lerobot/act_aloha_sim_transfer_cube_human)). A fair comparison keeps the same data (human demos), the same task and the same success definition. Scripted data would be a different benchmark.
+
+**Gate:** ACT, 100k checkpoint, setting 50 (re-plan every 1 s), human data. Pooled over three eval seeds (1000, 2000, 3000), 100 episodes each, using only the **first** run of each seed: **pass if ≥ 88%**.
+Why 88: with 300 episodes the gap to 83% has about ±2.5 points of noise; a real win needs about 2× that, so about 5 points above 83%.
+
+Limit: one training run (seed 0); training-seed variance is not measured.
+
+
+
+i also run in an other seeds and does the average i should have 264 and 88% but unfortunately i got 263 and 87.7% so that is a fails when i compare what i should have . 
