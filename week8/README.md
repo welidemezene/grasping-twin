@@ -6,8 +6,8 @@
 
 Gate, written before training:
 - Success = the left gripper holds the cube in the air (env reward 4). *Clarified after training; the gate said "Success = pass".*
-- Attempts = 50, because it is hard to decide the behavior of traning with the less attempts 
-- Pass if success rate >= 80 % at 100k steps, because this time we use all the data so it should pass minimum 80% of what it trying to do in first traning 
+- Attempts = 50, because fewer attempts are not enough to judge how the trained policy behaves.
+- Pass if success rate >= 80 % at 100k steps, because this time we train on all the data, so even the first training should succeed at least 80% of the time.
 
 ## Setup
 
@@ -40,13 +40,13 @@ The 20k eval crashed (`NamespaceNotFound: gym_aloha` in the async eval workers);
 
 12 s test (diagnostic, after training): 100k checkpoint, `--env.episode_length=600` instead of 400, 50 trials: **72% (36/50)**. More time did not help, so the failures are stuck, not slow.
 
-i just think first times it should pass 80% but we did not reach there after first 40k runs it does not improve the process so for me am taking this as fail and also the other things are i watch a video it is good but it fails sometimes (11 of 50) so we need to impove it i do check it does not have a loop issue it is some issue why it is not updating after some steps we may use more demos focusing on what points are our trained model failling.
+I expected the first training to pass 80%, but it did not. After 40k steps the success rate stopped improving, so I am counting this as a fail. In the videos the policy looks good, but it still fails 11 of 50 times, so it needs improving. It is not stuck in a loop; something stops it from improving after a certain number of steps. One fix could be more demos focused on the points where the trained model fails.
 
-so i belive more loop helps after we update or add more demos focusing where our trained model are missing things 
+I believe more training steps will help, but only after we add demos focused on where the trained model is missing things.
 
 Next test: add demos at the failure positions, same 100k steps. If success is still rising at 100k, then test longer training.
 
-so to identify which one cause to have a better trained model we need to do it in sequence otherwise it gona be hard to know and understand what causes the model trained good.
+To know which change actually makes the model better, we have to test them one at a time, in sequence. Otherwise it is hard to tell what caused the improvement.
 
 ## Tools
 
@@ -55,3 +55,58 @@ so to identify which one cause to have a better trained model we need to do it i
 ```
 MUJOCO_GL=egl python week8/tools/eval_angle_cam.py --policy.path=<checkpoint>/pretrained_model --env.type=aloha --env.task=AlohaTransferCube-v0 --eval.n_episodes=10 --eval.batch_size=1 --eval.use_async_envs=false --output_dir=<out>
 ```
+
+
+## Hypothesis: re-plan more often (written before the sweep)
+
+Now the question is how to improve the result. I have one idea to try, and I am writing my hypothesis down before running it.
+
+The idea is to change only the prediction part. Right now the policy executes 2 seconds (100 steps) of actions and is blind until the next plan. If it misses the grasp, it cannot see that and correct it until those 2 seconds are over. So I want it to look again much sooner, for example every 0.2 seconds (10 steps).
+
+I will run 100, 50, 20 and 10 steps (20 was actually run as 25). If none of them beats the previous 78%, I can conclude that being blind for 100 steps is not what causes the failures.
+
+My prediction: more than 80%, whatever the setting.
+
+
+
+
+
+
+
+
+
+## Re-planning sweep: results (table and notes written by Claude)
+
+Same 100k checkpoint, no retraining. Only `n_action_steps` (how many of the 100 predicted actions are executed before the policy looks again) changes. 100 episodes per cell. Script: [sweep.sh](sweep.sh).
+
+| n_action_steps | re-plans every | seed 1000 (Nov 4) | seed 2000 (Nov 4) | both seeds |
+|---|---|---|---|---|
+| 100 (default) | 2 s | 76% | 83% | 159/200 = 79.5% |
+| 50 | 1 s | 92% | 85% | 177/200 = 88.5% |
+| 25 | 0.5 s | 63% | — | — |
+| 10 | 0.2 s | 7% | — | — |
+| 1 + temporal ensemble (coeff 0.01) | every step | 71% | — | — |
+
+```
+bash week8/sweep.sh 100 1000 "100 50 25 10"   # seed 1000 row (+ ensemble)
+bash week8/sweep.sh 100 2000 "100 50"         # seed 2000 row
+```
+
+Run time: 15–25 min per setting for 100 episodes.
+
+### Concepts from this sweep (reference notes)
+
+**Seed.** The starting number of the random number generator. In this eval it fixes the list of cube positions, one per episode. Same seed = same 100 positions every time. A different seed = a different set of positions = a different "exam". Training has its own seed (`seed 0`), which fixes the starting weights and the data order; that is a separate thing.
+
+**Compare only on the same seed.** The unchanged policy (setting 100) scored 76% on seed 1000 and 83% on seed 2000. Nothing about the robot changed; only the cube positions did. So 85% on seed 2000 cannot be compared with 78% from the training eval.
+
+**Noise.** One run of 100 episodes at about 80% moves about ±4 points by chance alone. The gap between two such runs moves about ±6 points. A gap under about 2× that spread (about 10 points for two single runs) can easily be luck. Pooled over both seeds, the 9-point gap for setting 50 has a spread of about 3.6 points (about 2.5× the spread): suggestive, not proven.
+
+**Chunking trade-off.** ACT predicts 100 actions at once. Each chunk is one consistent plan, but the human demos contain several valid ways to do the task, and each new query can pick a different one. Re-planning too often (10, 25) switches plans mid-motion, so the arm never finishes one → collapse. Re-planning too rarely (100) means the policy is blind for 2 s and cannot correct a missed grasp. The best setting is in between. The temporal ensemble removes the jumps but averages different plans into one that matches neither. This is the standard explanation; it has not yet been checked against the videos of these runs.
+
+### What was real and what was luck (Woldemedihn)
+
+A seed fixes where the cube is placed in each episode, so each seed is a fixed set of cube positions. Both settings have to run on the same seed. With different seeds, you cannot tell whether a change in the score came from the setting or from the cube positions.
+
+On seed 2000, setting 50 beat setting 100 by only 2 points, inside the ±6 noise. So even though 92% looked like a good number, it was mostly luck.
+
