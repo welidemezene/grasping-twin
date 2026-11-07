@@ -148,3 +148,17 @@ i also run in an other seeds and does the average i should have 264 and 88% but 
 
 
 so finally to test what is the issue we train for a 5 hours in a scripted which is only works in a simulation because it cheats so when it was traning it was 98% then i test it and it got 94.67 so we decide that the issue we have is the demo,
+
+## Scripted-data results (numbers)
+
+Same ACT, same 100k steps, same training seed 0. Only the data changed: `lerobot/aloha_sim_transfer_cube_scripted` (50 demos from a script that reads the true cube pose, so it only exists in simulation). 100 episodes per cell, eval seeds 1000/2000/3000, first run of each.
+
+| policy | setting | seed 1000 | seed 2000 | seed 3000 | pooled | reach | grasp | carry | handover |
+|---|---|---|---|---|---|---|---|---|---|
+| human data | 50 | 92 | 85 | 86 | 263/300 = 87.7% | 1 | 4 | 32 | 0 |
+| scripted data | 50 | 93 | 95 | 96 | 284/300 = 94.7% | 1 | 5 | 10 | 0 |
+| scripted data | 100 | 95 | 95 | 96 | 286/300 = 95.3% | 0 | 10 | 4 | 0 |
+
+- The 98% during training was the in-training check (50 episodes, setting 100), not this exam.
+- Scripted vs human (setting 50): gap 7.0 points, about 3x the noise (±2.3), so real.
+- Scripted setting 50 vs 100: gap 0.6 points, inside the noise, so no difference.
