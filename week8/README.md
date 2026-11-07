@@ -145,3 +145,6 @@ Limit: one training run (seed 0); training-seed variance is not measured.
 
 
 i also run in an other seeds and does the average i should have 264 and 88% but unfortunately i got 263 and 87.7% so that is a fails when i compare what i should have . 
+
+
+so finally to test what is the issue we train for a 5 hours in a scripted which is only works in a simulation because it cheats so when it was traning it was 98% then i test it and it got 94.67 so we decide that the issue we have is the demo,
