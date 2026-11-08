@@ -162,3 +162,11 @@ Same ACT, same 100k steps, same training seed 0. Only the data changed: `lerobot
 - The 98% during training was the in-training check (50 episodes, setting 100), not this exam.
 - Scripted vs human (setting 50): gap 7.0 points, about 3x the noise (±2.3), so real.
 - Scripted setting 50 vs 100: gap 0.6 points, inside the noise, so no difference.
+
+
+
+Next action
+we move to the next weeks which is week 9 and after that am gona have a so-101 robots will be in hand with in a month.
+
+what i can now do unaided:
+i could figure out by myself from the policy what is the issue and figure out and resolve and fullfill that parts by adding a demo or adding the gaps and remanning parts.
