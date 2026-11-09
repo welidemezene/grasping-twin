@@ -59,18 +59,17 @@ has two possible causes, and no way to tell them apart.
 
 ## Three phases, and who does what
 
-**Phase 1 — `eval_ladder.py`. His.**
+**Phase 1 — `eval_ladder.py`.**
 Python, measurement, no Isaac Lab internals. This is the identified curriculum
 gap: evaluation, sampling, knowing when a number means something.
 
-**Phase 2 — validate against stage 23. His.**
+**Phase 2 — validate against stage 23.**
 Run the ladder over the existing checkpoints. Check the four rows above.
 
-**Phase 3 — stage 24. Shared.**
-`stage24_cfg.py`, the training script and the Docker launcher are AI-written —
-Isaac Lab plumbing is hard, is not the learning target, and `CLAUDE.md` says he
-may lean on it there. Running the ladder against the live run, reading the curve,
-and calling the peak are his.
+**Phase 3 — stage 24.**
+`stage24_cfg.py`, the training script and the Docker launcher are Isaac Lab
+plumbing, not the learning target. The learning target is running the ladder
+against the live run, reading the curve, and calling the peak.
 
 ## Phase 1 spec — what `eval_ladder.py` must do
 

@@ -50,7 +50,7 @@ To know which change actually makes the model better, we have to test them one a
 
 ## Tools
 
-`tools/eval_angle_cam.py` (written by Claude): runs `lerobot-eval` but records the video from the `angle` camera with recolored arms. The policy still sees the original `top` camera, so its behaviour is unchanged (checked: same 10 outcomes as the plain run).
+`tools/eval_angle_cam.py`: runs `lerobot-eval` but records the video from the `angle` camera with recolored arms. The policy still sees the original `top` camera, so its behaviour is unchanged (checked: same 10 outcomes as the plain run).
 
 ```
 MUJOCO_GL=egl python week8/tools/eval_angle_cam.py --policy.path=<checkpoint>/pretrained_model --env.type=aloha --env.task=AlohaTransferCube-v0 --eval.n_episodes=10 --eval.batch_size=1 --eval.use_async_envs=false --output_dir=<out>
@@ -104,7 +104,7 @@ Run time: 15–25 min per setting for 100 episodes.
 
 **Chunking trade-off.** ACT predicts 100 actions at once. Each chunk is one consistent plan, but the human demos contain several valid ways to do the task, and each new query can pick a different one. Re-planning too often (10, 25) switches plans mid-motion, so the arm never finishes one → collapse. Re-planning too rarely (100) means the policy is blind for 2 s and cannot correct a missed grasp. The best setting is in between. The temporal ensemble removes the jumps but averages different plans into one that matches neither. This is the standard explanation; it has not yet been checked against the videos of these runs.
 
-### What was real and what was luck (Woldemedihn)
+### What was real and what was luck
 
 A seed fixes where the cube is placed in each episode, so each seed is a fixed set of cube positions. Both settings have to run on the same seed. With different seeds, you cannot tell whether a change in the score came from the setting or from the cube positions.
 
@@ -128,7 +128,7 @@ Stage of each failed episode = its max reward (gym_aloha `tasks/sim.py`): 0 reac
 
 **Runs are not deterministic.** The re-run of seed 2000 / setting 50 (same weights, same seed) scored 91% instead of 85%. All 9 of its failures were also failures in the first run; 6 episodes flipped from fail to success. So about 9 cube positions fail every time, and some borderline ones can go either way. Even the same seed moves a few points between runs. Videos for all 100 episodes: [tools/eval_all_videos.py](tools/eval_all_videos.py).
 
-What I saw in the videos (Woldemedihn):
+What I saw in the videos:
 
 - With setting 100, when the robot misses the grasp it still lifts as if it held the cube, and only notices and retries much later. With setting 50 it notices within a short time and tries to grasp again. This is the "blind for 2 seconds" effect from my hypothesis, seen directly, and it is why setting 50 does better.
 - The remaining failures are mostly at the handover: the cube is lifted, but the two arms do not meet in the right place, so the left gripper never touches it.
@@ -170,3 +170,4 @@ we move to the next weeks which is week 9 and after that am gona have a so-101 r
 
 what i can now do unaided:
 i could figure out by myself from the policy what is the issue and figure out and resolve and fullfill that parts by adding a demo or adding the gaps and remanning parts.
+
