@@ -1,6 +1,5 @@
 #!/bin/bash
 # Week 9 exam: Diffusion 100k checkpoint, seeds 1000/2000/3000 x 100 episodes (same exam as week 8).
-# (written by Claude, at Woldemedihn's request)
 set -e
 source $HOME/grasping_twin/lerobot/bin/activate
 export MUJOCO_GL=egl

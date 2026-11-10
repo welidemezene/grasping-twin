@@ -4,8 +4,6 @@
 
 ## Gate (written before training)
 
-*Decisions by Woldemedihn, 2026-11-09; written up by Claude.*
-
 - **Trained:** Diffusion Policy (LeRobot 0.6.1 defaults), `lerobot/aloha_sim_transfer_cube_human`, **100k steps**, batch 8, training seed 0. Same steps, batch, seed and data as week 8 ACT.
 - **One variable:** only the policy type changes (ACT → Diffusion). `crop_shape` stays at the default (off), because ACT had no augmentation either.
 - **Success:** the left gripper holds the cube in the air (env reward 4), the same definition as week 8.

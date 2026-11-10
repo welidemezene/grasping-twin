@@ -8,7 +8,6 @@ Stage = the episode's max reward (gym_aloha transfer cube, tasks/sim.py):
   4 success
 
 Usage: python week8/tools/count_failures.py <eval_info.json> [more files...]
-(written by Claude, at Woldemedihn's request)
 """
 import json
 import sys

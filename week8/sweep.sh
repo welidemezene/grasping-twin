@@ -5,7 +5,6 @@
 #   bash week8/sweep.sh 100 1000 "100 50 25 10"   (first sweep, Nov 4, + ensemble)
 #   bash week8/sweep.sh 100 2000 "100 50"         (confirmation run)
 #   bash week8/sweep.sh 2 2000 "100 50"           (dry run, 2 episodes)
-# (written by Claude, at Woldemedihn's request)
 
 set -e                         # stop at the first error
 

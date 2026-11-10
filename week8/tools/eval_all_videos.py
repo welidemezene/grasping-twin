@@ -2,7 +2,6 @@
 # LeRobot hard-codes the limit (lerobot_eval.py: max_episodes_rendered = 10), so we
 # wrap eval_policy_all and replace that argument with the number of episodes.
 # Same flags as lerobot-eval. Policy behaviour is unchanged; only rendering differs.
-# (written by Claude, at Woldemedihn's request)
 import lerobot.scripts.lerobot_eval as lerobot_eval
 
 _original = lerobot_eval.eval_policy_all

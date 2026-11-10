@@ -1,7 +1,6 @@
 #!/bin/bash
 # Week 9: Diffusion Policy, same data/steps/batch/seed as week 8 ACT. Only the policy type changes.
 # Usage: nohup bash week9/train.sh > ~/diff_runs/train.log 2>&1 &
-# (written by Claude, at Woldemedihn's request)
 set -e
 source $HOME/grasping_twin/lerobot/bin/activate
 export MUJOCO_GL=egl
