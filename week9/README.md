@@ -41,3 +41,39 @@ YES i think yes it would beat which we have in a ACT otherwise what is the point
 
 a litter better than 93%
 
+
+## Result (2026-11-09)
+
+Diffusion, default settings, 100k checkpoint, 300 episodes:
+
+| seed 1000 | seed 2000 | seed 3000 | pooled |
+|---|---|---|---|
+| 67% | 68% | 63% | 198/300 = 66.0% |
+
+Failures: reach 23, grasp 15, carry 64, handover 0.
+
+**Gate (≥ 93%):** did not pass. We did not improve it by looking at its weakest parts first, but at default settings it did not pass.
+
+**My prediction:** wrong. 66% is less than I predicted ("a little better than 93%").
+
+**Compared with ACT's default (79.5%), I can say:** I expected the Diffusion default to be better than the ACT default, but it was not. 66% vs 79.5% is a big gap.
+
+**What I can't say yet:** that ACT is better than Diffusion. Diffusion was untuned, so we need to tune it before comparing. It also has many more parameters (263M vs 52M), so it may need more demos than ACT; that is a guess, not tested.
+
+**What I saw in the videos:** a lot of passes and failures. Mostly, when it fails, it does not notice whether it picked up the cube or not.
+
+**Why I think reach failures appeared (ACT at execute 50/100 had 0, at 25 had 7, at 10 had 63; Diffusion executes 32):** the demos are not the problem. ACT learned from the same 50 demos and had no reach failures. It is like two friends going to the same gym: one gets stronger and the other does not, so the difference is in the person, not the gym.
+
+My guess is that Diffusion re-plans too fast, every 0.64 s, and every re-plan starts from scratch (new random noise). So it can go to the left, then re-plan and go to the right, and never reach the cube. Two things together: it re-plans often, and each re-plan can choose a different side. To check it, make it commit longer before re-planning, close to ACT's 1 s (round 2 below).
+
+## Round 2 gate: does committing longer fix the reach failures? (written before running, 2026-11-11)
+
+**Idea being tested:** Diffusion re-plans every 32 steps (0.64 s), more often than ACT's good settings (1–2 s), and every re-plan starts from new random noise, so it can switch between left and right routes and never reach the cube. If that is true, executing more steps per plan should reduce reach failures, and executing fewer should increase them.
+
+- **Same** 100k checkpoint, no retraining. **Only** `n_action_steps` changes.
+- **Choosing step, seed 4000** (never used by the exam), 100 episodes each: execute **32** (default, baseline on this seed), **16**, **48**, **63** (maximum: 64 predicted − 2 observation frames + 1). Script: [sweep.sh](sweep.sh).
+- **Idea supported if**, on seed 4000: reach failures at the better of 48/63 are **at most half** of those at 32, **and** 16 has **more** reach failures than 32.
+- **Best setting** = highest success rate on seed 4000 (ties → longer commit).
+- **Exam:** the best setting on seeds 1000 / 2000 / 3000 × 100, first run only, pooled 300. **Pass if ≥ 85%**: beats ACT's default (79.5%) by more than noise and comes close to tuned ACT (87.7%).
+
+**My prediction:** 48 wins on seed 4000 with about 85% success. ACT's best was re-planning every 1 s, and 48 (0.96 s) is closer to 1 s than 63 (1.26 s). I expect the reach idea to be supported, for the reasons in my explanation above.
