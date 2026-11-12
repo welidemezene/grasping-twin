@@ -77,3 +77,27 @@ My guess is that Diffusion re-plans too fast, every 0.64 s, and every re-plan st
 - **Exam:** the best setting on seeds 1000 / 2000 / 3000 × 100, first run only, pooled 300. **Pass if ≥ 85%**: beats ACT's default (79.5%) by more than noise and comes close to tuned ACT (87.7%).
 
 **My prediction:** 48 wins on seed 4000 with about 85% success. ACT's best was re-planning every 1 s, and 48 (0.96 s) is closer to 1 s than 63 (1.26 s). I expect the reach idea to be supported, for the reasons in my explanation above.
+
+## Round 2 result (2026-11-12)
+
+**Choosing step, seed 4000** (100 episodes each):
+
+| execute | success | reach | grasp | carry |
+|---|---|---|---|---|
+| 16 | 50% | 18 | 4 | 28 |
+| 32 (baseline) | 60% | 10 | 8 | 22 |
+| **48** | **68%** | 9 | 8 | 15 |
+| 63 | 63% | 9 | 13 | 15 |
+
+**Exam, execute 48** (seeds 1000 / 2000 / 3000 × 100, [eval.sh](eval.sh) `48`):
+
+| | seed 1000 | seed 2000 | seed 3000 | pooled | reach | grasp | carry |
+|---|---|---|---|---|---|---|---|
+| Round 1 (execute 32) | 67 | 68 | 63 | 198/300 = **66.0%** | 23 | 15 | 64 |
+| Round 2 (execute 48) | 70 | 65 | 67 | 202/300 = **67.3%** | 14 | 30 | 54 |
+
+1. **Gate: failed.** 67.3% is below the 85% bar.
+2. **Prediction: half right.** 48 did win on seed 4000, but the exam reached 67.3%, not 85%.
+3. **Reach idea: not supported as written.** The rule needed both parts. Part A failed: reach at 48/63 was 9, not at most 5. Part B passed: 16 had 18 reach failures against 10 at 32. Reach also dropped on the exam (23 → 14), so the idea is not dead, but that is a hint for a new test with its own rule, not a result of this one.
+4. **Why grasp doubled (15 → 30), my guess:** it is the same trade-off as ACT in week 8. With 48, the robot predicts 64 steps and executes 48 (0.96 s) without looking at the camera again. Committing longer reduces left-right switching, which helps reach, but closing the gripper needs quick correction, and the robot is blind for longer at that moment. I have not confirmed this in the videos yet.
+5. **66.0% → 67.3% is noise.** With 300 episodes, one exam is uncertain by about ±5 points, and comparing two exams by about ±7.5. A 1.3-point gap is well inside that, so 48 is not proven better than 32.
