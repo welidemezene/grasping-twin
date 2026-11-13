@@ -102,7 +102,24 @@ My guess is that Diffusion re-plans too fast, every 0.64 s, and every re-plan st
 4. **Why grasp doubled (15 → 30), my guess:** it is the same trade-off as ACT in week 8. With 48, the robot predicts 64 steps and executes 48 (0.96 s) without looking at the camera again. Committing longer reduces left-right switching, which helps reach, but closing the gripper needs quick correction, and the robot is blind for longer at that moment. I have not confirmed this in the videos yet.
 5. **66.0% → 67.3% is noise.** With 300 episodes, one exam is uncertain by about ±5 points, and comparing two exams by about ±7.5. A 1.3-point gap is well inside that, so 48 is not proven better than 32.
 
-## Where to resume (2026-11-13)
+## Round 3 result (2026-11-13)
 
-- **Next action:** commit `week9/eval.sh` (the optional `48` argument is not on GitHub yet), then read `compute_loss` (line 335 of LeRobot's `modeling_diffusion.py`) to see how Diffusion learns, then decide whether week 9 is closed.
-- **What I can do unaided now:** nothing new yet. I can explain `conditional_sample` (random numbers → 100 cleaning steps → 64 actions) only with help so far.
+**Exam, batch 24** (checkpoint 33,333, execute 32, seeds 1000 / 2000 / 3000 × 100):
+
+| | seed 1000 | seed 2000 | seed 3000 | pooled | reach | grasp | carry |
+|---|---|---|---|---|---|---|---|
+| Round 1 (batch 8) | 67 | 68 | 63 | 198/300 = **66.0%** | 23 | 15 | 64 |
+| Round 3 (batch 24) | 79 | 79 | 87 | 245/300 = **81.7%** | 20 | 16 | 19 |
+
+For comparison, ACT scored 79.5% at its default and 87.7% tuned.
+
+1. **Gate: passed.** 81.7% is above the 74% bar.
+2. **Prediction: wrong, too low.** I predicted 72% and got 81.7%, about 10 points more. I did not expect this.
+3. **Carry dropped the most (64 → 19), not reach (23 → 20)** as I predicted. The reach change is inside the noise.
+4. **Why carry improved but reach did not, my hypothesis:** the demos carry the cube in about the same way, so with 24 examples per step the examples agree and the network learns carrying cleanly. The demos reach the cube in more different ways, so more examples per step do not settle it. Not tested yet.
+5. **What I can claim:** batch 24 is very likely better than batch 8, because the gap (15.7 points) is about twice the noise between two exams. But this is one training run (seed 0), and a different training seed changes the starting weights and data order, so it is not proven.
+
+## Where to resume (2026-11-13, night)
+
+- **Next action:** watch seed 3000 episodes 4, 8 and 9 in round 1 (`~/diff_runs/eval/seed3000/videos/aloha_0/`) and round 3 (`~/diff_runs/eval_b24_seed0/seed3000/videos/aloha_0/`) and add what I saw to answer 4. Then decide: a second training seed for batch 24, or close week 9.
+- **What I can do unaided now:** TBD
