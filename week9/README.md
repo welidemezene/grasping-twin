@@ -101,3 +101,8 @@ My guess is that Diffusion re-plans too fast, every 0.64 s, and every re-plan st
 3. **Reach idea: not supported as written.** The rule needed both parts. Part A failed: reach at 48/63 was 9, not at most 5. Part B passed: 16 had 18 reach failures against 10 at 32. Reach also dropped on the exam (23 → 14), so the idea is not dead, but that is a hint for a new test with its own rule, not a result of this one.
 4. **Why grasp doubled (15 → 30), my guess:** it is the same trade-off as ACT in week 8. With 48, the robot predicts 64 steps and executes 48 (0.96 s) without looking at the camera again. Committing longer reduces left-right switching, which helps reach, but closing the gripper needs quick correction, and the robot is blind for longer at that moment. I have not confirmed this in the videos yet.
 5. **66.0% → 67.3% is noise.** With 300 episodes, one exam is uncertain by about ±5 points, and comparing two exams by about ±7.5. A 1.3-point gap is well inside that, so 48 is not proven better than 32.
+
+## Where to resume (2026-11-13)
+
+- **Next action:** commit `week9/eval.sh` (the optional `48` argument is not on GitHub yet), then read `compute_loss` (line 335 of LeRobot's `modeling_diffusion.py`) to see how Diffusion learns, then decide whether week 9 is closed.
+- **What I can do unaided now:** nothing new yet. I can explain `conditional_sample` (random numbers → 100 cleaning steps → 64 actions) only with help so far.
