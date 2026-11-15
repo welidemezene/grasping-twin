@@ -122,4 +122,4 @@ For comparison, ACT scored 79.5% at its default and 87.7% tuned.
 ## Where to resume (2026-11-13, night)
 
 - **Next action:** watch seed 3000 episodes 4, 8 and 9 in round 1 (`~/diff_runs/eval/seed3000/videos/aloha_0/`) and round 3 (`~/diff_runs/eval_b24_seed0/seed3000/videos/aloha_0/`) and add what I saw to answer 4. Then decide: a second training seed for batch 24, or close week 9.
-- **What I can do unaided now:** TBD
+- **What I can do unaided now:** I understand the key training words (batch, step, epoch, training seed vs eval seed) well enough to use them, with a search for details. Not yet tested without notes.
