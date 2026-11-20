@@ -117,7 +117,12 @@ For comparison, ACT scored 79.5% at its default and 87.7% tuned.
 2. **Prediction: wrong, too low.** I predicted 72% and got 81.7%, about 10 points more. I did not expect this.
 3. **Carry dropped the most (64 → 19), not reach (23 → 20)** as I predicted. The reach change is inside the noise.
 4. **Why carry improved but reach did not, my hypothesis:** the demos carry the cube in about the same way, so with 24 examples per step the examples agree and the network learns carrying cleanly. The demos reach the cube in more different ways, so more examples per step do not settle it. Not tested yet.
+   - **What I saw in the round 3 videos (seed 3000):** in both episodes, grasping and carrying failed. In episode 2, the arm tried to grasp the cube more than once. In episode 6, it grasped the air and carried it.
 5. **What I can claim:** batch 24 is very likely better than batch 8, because the gap (15.7 points) is about twice the noise between two exams. But this is one training run (seed 0), and a different training seed changes the starting weights and data order, so it is not proven.
+
+## My guess for the next test (before discussion, 2026-11-20)
+
+My guess is that the missing parts are observation and data. I don't think we need more changes to the batch size. I would like to test with more demos on carrying and grasping, with a clearer observation, and then train for a short time.
 
 ## Where to resume (2026-11-13, night)
 
